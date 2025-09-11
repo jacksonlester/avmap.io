@@ -1,147 +1,185 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Georeferencing Index</title>
-<style>body{font-family:system-ui,-apple-system,sans-serif;margin:16px} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ddd;padding:8px} th{background:#f5f5f5;text-align:left} .ok{color:#2e7d32;font-weight:600} .miss{color:#c62828;font-weight:600} a.btn{background:#0b74de;color:#fff;text-decoration:none;padding:4px 8px;border-radius:6px} .nowrap{white-space:nowrap} .pub{min-width:160px}</style>
+<html><head><meta charset="utf-8"><title>Georeferencing Dashboard</title>
+<style>body{font-family:system-ui,-apple-system,sans-serif;margin:16px} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ddd;padding:8px} th{background:#f5f5f5;text-align:left} .ok{color:#2e7d32;font-weight:600} .miss{color:#c62828;font-weight:600} a.btn{background:#0b74de;color:#fff;text-decoration:none;padding:4px 8px;border-radius:6px}</style>
 </head><body>
 <h2>Georeferencing Dashboard</h2>
-<div style="margin:8px 0;">
-<button onclick="startServerForFirst()">Start Server</button>
-<span id="srvStatus" style="margin-left:8px;color:#555"></span>
-</div>
-<p>Pending georeference: <b>8</b> of <b>14</b></p>
 <table>
-<tr><th>City</th><th>Date</th><th>Image</th><th>GeoTIFF</th><th>Boundary</th><th>Published</th><th class="nowrap">Open GCP UI</th></tr>
+<tr><th>Company</th><th>City</th><th>Date</th><th>Image</th><th>GeoTIFF</th><th>Boundary</th></tr>
 <tr>
+<td></td>
+<td>Providers</td>
+<td>Example Folder</td>
+<td><span class=miss>no image</span></td>
+<td><span class=miss>no</span></td>
+<td><span class=miss>no</span></td>
+</tr>
+<tr>
+<td>May Mobility</td>
+<td>Atlanta</td>
+<td>September 2025</td>
+<td><code>Providers/May Mobility/Atlanta/September 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
+</tr>
+<tr>
+<td>Tesla</td>
+<td>Austin</td>
+<td>August 26 2025</td>
+<td><code>Providers/Tesla/Austin/August 26 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
+</tr>
+<tr>
+<td>Tesla</td>
+<td>Austin</td>
+<td>August 3 2025</td>
+<td><code>Providers/Tesla/Austin/August 3 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
+</tr>
+<tr>
+<td>Tesla</td>
+<td>Austin</td>
+<td>July 14 2025</td>
+<td><code>Providers/Tesla/Austin/July 14 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
+</tr>
+<tr>
+<td>Tesla</td>
+<td>Austin</td>
+<td>June 22 2025</td>
+<td><code>Providers/Tesla/Austin/June 22 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
+</tr>
+<tr>
+<td>Tesla</td>
+<td>Bay Area</td>
+<td>July 31 2025</td>
+<td><code>Providers/Tesla/Bay Area/July 31 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
+</tr>
+<tr>
+<td>Waymo</td>
 <td>Atlanta</td>
 <td>June 2025</td>
 <td><code>Providers/Waymo/Atlanta/June 2025/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Atlanta/June%202025/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FAtlanta%2FJune+2025%2Finterim%2Fservice+area+cropped.png&city=Atlanta" id="open_Providers/Waymo/Atlanta/June%202025/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Austin</td>
 <td>July 2025</td>
 <td><code>Providers/Waymo/Austin/July 2025/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Austin/July%202025/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FAustin%2FJuly+2025%2Finterim%2Fservice+area+cropped.png&city=Austin" id="open_Providers/Waymo/Austin/July%202025/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Austin</td>
 <td>March 2025</td>
 <td><code>Providers/Waymo/Austin/March 2025/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Austin/March%202025/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FAustin%2FMarch+2025%2Finterim%2Fservice+area+cropped.png&city=Austin" id="open_Providers/Waymo/Austin/March%202025/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Los Angeles</td>
 <td>August 2024</td>
 <td><code>Providers/Waymo/Los Angeles/August 2024/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Los%20Angeles/August%202024/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FLos+Angeles%2FAugust+2024%2Finterim%2Fservice+area+cropped.png&city=Los+Angeles" id="open_Providers/Waymo/Los%20Angeles/August%202024/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Los Angeles</td>
 <td>June 2025</td>
 <td><code>Providers/Waymo/Los Angeles/June 2025/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Los%20Angeles/June%202025/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FLos+Angeles%2FJune+2025%2Finterim%2Fservice+area+cropped.png&city=Los+Angeles" id="open_Providers/Waymo/Los%20Angeles/June%202025/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Phoenix</td>
 <td>December 2022</td>
 <td><code>Providers/Waymo/Phoenix/December 2022/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Phoenix/December%202022/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FPhoenix%2FDecember+2022%2Finterim%2Fservice+area+cropped.png&city=Phoenix" id="open_Providers/Waymo/Phoenix/December%202022/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Phoenix</td>
 <td>June 2024</td>
 <td><code>Providers/Waymo/Phoenix/June 2024/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Phoenix/June%202024/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FPhoenix%2FJune+2024%2Finterim%2Fservice+area+cropped.png&city=Phoenix" id="open_Providers/Waymo/Phoenix/June%202024/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Phoenix</td>
 <td>May 2023</td>
 <td><code>Providers/Waymo/Phoenix/May 2023/interim/service area cropped.png</code></td>
-<td><span class=miss>no</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Phoenix/May%202023/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FPhoenix%2FMay+2023%2Finterim%2Fservice+area+cropped.png&city=Phoenix" id="open_Providers/Waymo/Phoenix/May%202023/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>San Francisco</td>
 <td>August 2023</td>
 <td><code>Providers/Waymo/San Francisco/August 2023/interim/service area cropped.png</code></td>
 <td><span class=ok>yes</span></td>
 <td><span class=ok>yes</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/San%20Francisco/August%202023/processed/boundary.geojson"><em>unknown</em></span><br><button onclick="togglePub('Providers/Waymo/San%20Francisco/August%202023/processed/boundary.geojson',1)">Publish</button> <button onclick="togglePub('Providers/Waymo/San%20Francisco/August%202023/processed/boundary.geojson',0)">Unpublish</button></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FSan+Francisco%2FAugust+2023%2Finterim%2Fservice+area+cropped.png&city=San+Francisco" id="open_Providers/Waymo/San%20Francisco/August%202023/processed/boundary.geojson">Open</a></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>San Francisco</td>
 <td>August 2024</td>
 <td><code>Providers/Waymo/San Francisco/August 2024/interim/service area cropped.png</code></td>
 <td><span class=ok>yes</span></td>
-<td><span class=miss>no</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/San%20Francisco/August%202024/processed/boundary.geojson"><em>unknown</em></span><br></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FSan+Francisco%2FAugust+2024%2Finterim%2Fservice+area+cropped.png&city=San+Francisco" id="open_Providers/Waymo/San%20Francisco/August%202024/processed/boundary.geojson">Open</a></td>
+<td><span class=ok>yes</span></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>San Francisco</td>
 <td>December 2022</td>
 <td><code>Providers/Waymo/San Francisco/December 2022/interim/service area cropped.png</code></td>
 <td><span class=ok>yes</span></td>
 <td><span class=ok>yes</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/San%20Francisco/December%202022/processed/boundary.geojson"><em>unknown</em></span><br><button onclick="togglePub('Providers/Waymo/San%20Francisco/December%202022/processed/boundary.geojson',1)">Publish</button> <button onclick="togglePub('Providers/Waymo/San%20Francisco/December%202022/processed/boundary.geojson',0)">Unpublish</button></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FSan+Francisco%2FDecember+2022%2Finterim%2Fservice+area+cropped.png&city=San+Francisco" id="open_Providers/Waymo/San%20Francisco/December%202022/processed/boundary.geojson">Open</a></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>San Francisco</td>
 <td>June 2025</td>
 <td><code>Providers/Waymo/San Francisco/June 2025/interim/service area cropped.png</code></td>
 <td><span class=ok>yes</span></td>
 <td><span class=ok>yes</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/San%20Francisco/June%202025/processed/boundary.geojson"><em>unknown</em></span><br><button onclick="togglePub('Providers/Waymo/San%20Francisco/June%202025/processed/boundary.geojson',1)">Publish</button> <button onclick="togglePub('Providers/Waymo/San%20Francisco/June%202025/processed/boundary.geojson',0)">Unpublish</button></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FSan+Francisco%2FJune+2025%2Finterim%2Fservice+area+cropped.png&city=San+Francisco" id="open_Providers/Waymo/San%20Francisco/June%202025/processed/boundary.geojson">Open</a></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Silicon Valley</td>
 <td>June 2025</td>
 <td><code>Providers/Waymo/Silicon Valley/June 2025/interim/service area cropped.png</code></td>
 <td><span class=ok>yes</span></td>
 <td><span class=ok>yes</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Silicon%20Valley/June%202025/processed/boundary.geojson"><em>unknown</em></span><br><button onclick="togglePub('Providers/Waymo/Silicon%20Valley/June%202025/processed/boundary.geojson',1)">Publish</button> <button onclick="togglePub('Providers/Waymo/Silicon%20Valley/June%202025/processed/boundary.geojson',0)">Unpublish</button></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FSilicon+Valley%2FJune+2025%2Finterim%2Fservice+area+cropped.png&city=Silicon+Valley" id="open_Providers/Waymo/Silicon%20Valley/June%202025/processed/boundary.geojson">Open</a></td>
 </tr>
 <tr>
+<td>Waymo</td>
 <td>Silicon Valley</td>
 <td>March 2025</td>
 <td><code>Providers/Waymo/Silicon Valley/March 2025/interim/service area cropped.png</code></td>
 <td><span class=ok>yes</span></td>
 <td><span class=ok>yes</span></td>
-<td class="pub"><span id="pub_Providers/Waymo/Silicon%20Valley/March%202025/processed/boundary.geojson"><em>unknown</em></span><br><button onclick="togglePub('Providers/Waymo/Silicon%20Valley/March%202025/processed/boundary.geojson',1)">Publish</button> <button onclick="togglePub('Providers/Waymo/Silicon%20Valley/March%202025/processed/boundary.geojson',0)">Unpublish</button></td>
-<td class="nowrap"><a class="btn" href="http://127.0.0.1:5001/open?image=Providers%2FWaymo%2FSilicon+Valley%2FMarch+2025%2Finterim%2Fservice+area+cropped.png&city=Silicon+Valley" id="open_Providers/Waymo/Silicon%20Valley/March%202025/processed/boundary.geojson">Open</a></td>
+</tr>
+<tr>
+<td>Zoox</td>
+<td>Las Vegas</td>
+<td>September 2025</td>
+<td><code>Providers/Zoox/Las Vegas/September 2025/interim/service area cropped.png</code></td>
+<td><span class=ok>yes</span></td>
+<td><span class=ok>yes</span></td>
 </tr>
 </table>
-<p style="margin-top:12px">Use the Start Server button to launch the GCP UI via the local publisher service. Publishing toggles also require the publisher service.</p>
-<script>
-async function refreshStatus(){try{const s=await (await fetch('http://127.0.0.1:5050/gcp/status')).json(); document.getElementById('srvStatus').textContent = s.running? ('Server running on '+s.port): 'Server not running'; const links=[...document.querySelectorAll('a[id^=open_]')]; links.forEach(a=>{a.style.pointerEvents=s.running?'auto':'none'; a.style.opacity=s.running?'1':'0.5';}); const pub=await (await fetch('http://127.0.0.1:5050/status')).json(); for(const k in pub){const id='pub_'+encodeURIComponent(k); const el=document.getElementById(id); if(el) el.innerHTML = pub[k]? '<span class=ok>yes</span>' : '<span class=miss>no</span>'; } }catch(e){ document.getElementById('srvStatus').textContent='Publisher not running'; }}
-async function startServerForFirst(){try{const btn=document.querySelector('a[id^=open_]'); if(!btn){alert('No rows'); return;} const url=new URL(btn.href); const image=url.searchParams.get('image'); const city=url.searchParams.get('city')||''; const r=await fetch('http://127.0.0.1:5050/gcp/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image,city})}); if(r.ok){setTimeout(refreshStatus,700);} else {alert('Failed to start');}}catch(e){alert('Publisher not running');}}
-async function togglePub(keyEnc,val){try{await fetch('http://127.0.0.1:5050/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:decodeURIComponent(keyEnc),value:!!val})}); await fetch('http://127.0.0.1:5050/rebuild',{method:'POST'}); refreshStatus();}catch(e){alert('publisher not running')}}
-refreshStatus(); setInterval(refreshStatus, 3000);
-</script>
 </body></html>
