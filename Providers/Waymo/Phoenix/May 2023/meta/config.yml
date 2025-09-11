@@ -1,0 +1,23 @@
+paths:
+  image_georef: ../interim/georef.tif
+  out_geojson: ../processed/boundary.geojson
+extract:
+  hsv_lower:
+    - 90
+    - 50
+    - 50
+  hsv_upper:
+    - 130
+    - 255
+    - 255
+  close_kernel: 9
+  simplify_ratio: 0.0005
+  min_ring_length: 20
+post:
+  smooth_radius_m: 70
+  simplify_tolerance_m: 10
+  include_holes: false
+  min_hole_area_sqkm: 0.9
+  max_perimeters: 1
+  shave_radius_m: 40
+  buffer_round_m: 30

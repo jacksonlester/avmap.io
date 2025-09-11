@@ -1,0 +1,9 @@
+/env/
+pycache/
+*.pyc
+.DS_Store
+/data/published.json
+*.log
+/migration_raw_to_interim.log
+/batch_waymo_boundaries.log
+/tmp/

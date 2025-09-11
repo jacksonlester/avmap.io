@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GCP Web UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body { margin: 0; height: 100%; font-family: system-ui, -apple-system, sans-serif; }
+    #app { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+    #left, #right { position: relative; overflow: hidden; }
+    #imgCanvas { cursor: crosshair; background: #222; display: block; }
+    #map { height: 100%; z-index: 0; }
+    .leaflet-container { cursor: crosshair !important; }
+    .toolbar { position: absolute; top: 8px; left: 8px; background: rgba(255,255,255,0.9); padding: 8px; border-radius: 6px; z-index: 10000; pointer-events: auto; }
+    .pts { font-size: 12px; max-height: 140px; overflow: auto; }
+    button { padding: 6px 10px; margin-right: 6px; }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: rgba(255,255,255,0.98); padding: 8px 12px; border-bottom: 1px solid #ddd; display: flex; gap: 8px; align-items: center; }
+    .save-fab { position: fixed; right: 16px; bottom: 16px; z-index: 10002; background: #0b74de; color: #fff; border: none; padding: 10px 14px; border-radius: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer; font-weight: 600; }
+    .save-fab:active { transform: translateY(1px); }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="saveBtnTop">Compute & Save GeoTIFF ⌘⏎</button>
+    <button id="undoImgBtn">Undo Image Point</button>
+    <button id="undoMapBtn">Undo Map Point</button>
+    <button id="resetBtn">Reset</button>
+    <span id="statusTop" style="font-size:12px;color:#333;margin-left:8px;"></span>
+  </div>
+  <button class="save-fab" id="saveBtnFab" title="Compute & Save GeoTIFF (Cmd/Ctrl+Enter)">Save</button>
+  <div id="app">
+    <div id="left">
+      <div class="toolbar">
+        <div><b>Image</b>: {{ image_rel }}</div>
+        <div>Size: {{ width }} x {{ height }}</div>
+        <div style="margin-top:6px; font-size:12px; line-height:1.3;">
+          Double‑click to add a point. Drag to pan. Alt+Drag near a point to move it. Click to select.
+        </div>
+        <div style="margin-top:6px;">
+          <button id="resetBtn">Reset</button>
+          <button id="undoImgBtn">Undo Image Point</button>
+          <button id="saveBtnLeft">Save</button>
+        </div>
+        <div class="pts">
+          <div><b>Pixel points</b></div>
+          <ol id="pixList"></ol>
+        </div>
+      </div>
+      <canvas id="imgCanvas" width="{{ width }}" height="{{ height }}"></canvas>
+    </div>
+    <div id="right">
+      <div class="toolbar">
+        <div><b>Map</b>: {{ city }}</div>
+        <div style="margin-top:6px; font-size:12px; line-height:1.3;">Double‑click to add a point. Drag markers to move. Click marker to select.</div>
+        <div style="margin-top:6px;">
+          <button id="saveBtn">Compute & Save GeoTIFF</button>
+          <button id="undoMapBtn">Undo Map Point</button>
+        </div>
+        <div class="pts">
+          <div><b>Lon/Lat points</b></div>
+          <ol id="geoList"></ol>
+        </div>
+        <div id="status" style="font-size:12px; color:#333;"></div>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+  const imgPath = "{{ image_rel }}";
+  const W = {{ width }};
+  const H = {{ height }};
+  const pixPts = [];
+  const geoPts = [];
+  const COLORS = ['#e91e63','#3f51b5','#009688','#ff9800','#9c27b0','#2196f3','#4caf50','#ff5722','#795548','#607d8b'];
+  let selectedPixIdx = -1;
+
+  // Left: simple canvas pan/zoom
+  const canvas = document.getElementById('imgCanvas');
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.src = imgPath;
+  let scale = 1, ox = 0, oy = 0; // zoom and pan
+  let isPanning = false, sx=0, sy=0;
+
+  function draw() {
+    ctx.save();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.setTransform(scale,0,0,scale,ox,oy);
+    ctx.drawImage(img, 0,0);
+    // draw pixel points (color-coded)
+    ctx.lineWidth = 2/scale;
+    pixPts.forEach((p,i)=>{
+      const col = COLORS[i % COLORS.length];
+      // halo
+      ctx.beginPath(); ctx.arc(p[0], p[1], 7/scale, 0, 2*Math.PI);
+      ctx.strokeStyle = (i===selectedPixIdx) ? '#0ff' : '#000';
+      ctx.stroke();
+      // fill
+      ctx.beginPath(); ctx.arc(p[0], p[1], 5/scale, 0, 2*Math.PI);
+      ctx.fillStyle = col; ctx.fill();
+      // label
+      ctx.fillStyle = col; ctx.strokeStyle = '#000'; ctx.lineWidth = 1/scale;
+      ctx.strokeText(String(i+1), p[0]+6/scale, p[1]-6/scale);
+      ctx.fillText(String(i+1), p[0]+6/scale, p[1]-6/scale);
+    });
+    ctx.restore();
+  }
+  img.onload = () => draw();
+
+  // helpers
+  function screenToImage(e){
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    const x = (cx - ox)/scale, y = (cy - oy)/scale; return {x,y,cx,cy};
+  }
+  function imageToScreen(p){
+    return { sx: p[0]*scale + ox, sy: p[1]*scale + oy };
+  }
+  function hitTestPix({cx,cy}){
+    // return index if near a point (in screen pixels)
+    const R = 10; let best=-1, bestd=1e9;
+    pixPts.forEach((p,i)=>{
+      const s=imageToScreen(p); const dx=cx-s.sx, dy=cy-s.sy; const d=Math.hypot(dx,dy);
+      if (d<R && d<bestd){ best=i; bestd=d; }
+    });
+    return best;
+  }
+  let draggingPixIdx = -1;
+  // Mouse events
+  canvas.addEventListener('mousedown', e=>{
+    const pos = screenToImage(e);
+    const hit = hitTestPix(pos);
+    if (e.altKey && hit !== -1) {
+      // move point
+      draggingPixIdx = hit; selectedPixIdx = hit; draw();
+    } else {
+      // pan
+      isPanning=true; sx=e.clientX; sy=e.clientY;
+    }
+  });
+  canvas.addEventListener('mousemove', e=>{
+    if (draggingPixIdx !== -1){
+      const pos = screenToImage(e); pixPts[draggingPixIdx] = [pos.x,pos.y]; updateLists(); draw();
+      return;
+    }
+    if (isPanning) { ox += (e.clientX - sx); oy += (e.clientY - sy); sx=e.clientX; sy=e.clientY; draw(); }
+  });
+  canvas.addEventListener('mouseup', ()=>{ isPanning=false; draggingPixIdx=-1; });
+  canvas.addEventListener('mouseleave', ()=>{ isPanning=false; draggingPixIdx=-1; });
+  canvas.addEventListener('click', e=>{ const hit=hitTestPix(screenToImage(e)); selectedPixIdx = hit; draw(); });
+  canvas.addEventListener('wheel', e=>{
+    const ds = Math.exp(-e.deltaY * 0.001);
+    // zoom to cursor
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    const x0 = (cx - ox)/scale, y0 = (cy - oy)/scale;
+    scale *= ds;
+    ox = cx - x0*scale; oy = cy - y0*scale; draw();
+  });
+  canvas.addEventListener('dblclick', e=>{
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    const x = (cx - ox)/scale, y = (cy - oy)/scale;
+    pixPts.push([x,y]);
+    updateLists(); draw();
+  });
+
+  // Right: Leaflet map
+  const map = L.map('map').setView([37.77,-122.42], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  const markers = [];
+  map.on('dblclick', e=>{
+    const ll = [e.latlng.lng, e.latlng.lat];
+    geoPts.push(ll);
+    const idx = geoPts.length-1; const col = COLORS[idx % COLORS.length];
+    const html = `<div style="position:relative;width:14px;height:14px;transform:translate(-7px,-7px);">
+      <div style="width:14px;height:14px;border-radius:7px;background:${col};border:2px solid #000;"></div>
+      <div style="position:absolute;left:16px;top:-6px;color:${col};-webkit-text-stroke:0.5px black;text-stroke:0.5px black;font: 600 12px system-ui;">${idx+1}</div>
+    </div>`;
+    const m = L.marker(e.latlng, {draggable:true, title:String(idx+1), icon: L.divIcon({className:'gcp-dot', html, iconSize:[14,14], iconAnchor:[7,7]})}).addTo(map);
+    m.idx = markers.length; // index aligned with geoPts
+    m.on('drag', ev=>{ const {lng,lat} = ev.target.getLatLng(); geoPts[ev.target.idx] = [lng,lat]; updateLists(); });
+    m.on('click', ev=>{ /* simple select highlight via title */ });
+    markers.push(m);
+    updateLists();
+  });
+
+  // UI helpers
+  function updateLists(){
+    const pixList = document.getElementById('pixList');
+    const geoList = document.getElementById('geoList');
+    pixList.innerHTML = pixPts.map((p,i)=>`<li><span style=\"display:inline-block;width:10px;height:10px;border-radius:5px;background:${COLORS[i%COLORS.length]};margin-right:6px;\"></span>${p[0].toFixed(1)}, ${p[1].toFixed(1)}</li>`).join('');
+    geoList.innerHTML = geoPts.map((p,i)=>`<li><span style=\"display:inline-block;width:10px;height:10px;border-radius:5px;background:${COLORS[i%COLORS.length]};margin-right:6px;\"></span>${p[0].toFixed(6)}, ${p[1].toFixed(6)}</li>`).join('');
+  }
+  document.getElementById('resetBtn').onclick = ()=>{
+    pixPts.length = 0; geoPts.length = 0; markers.forEach(m=>m.remove()); markers.length=0; updateLists(); draw();
+  };
+  document.getElementById('undoImgBtn').onclick = ()=>{
+    if (pixPts.length>0){ pixPts.pop(); if (selectedPixIdx>=pixPts.length) selectedPixIdx=-1; updateLists(); draw(); }
+  };
+  document.getElementById('undoMapBtn').onclick = ()=>{
+    if (geoPts.length>0){ geoPts.pop(); const m=markers.pop(); if(m) m.remove(); updateLists(); }
+  };
+
+  async function computeAndSave(){
+    const status = document.getElementById('status');
+    const statusTop = document.getElementById('statusTop');
+    if (pixPts.length < 3 || geoPts.length < 3 || pixPts.length !== geoPts.length) {
+      const msg = 'Need at least 3 matching pairs (double-click on each side).';
+      status.textContent = msg; statusTop.textContent = msg;
+      return;
+    }
+    status.textContent = 'Computing transform and writing GeoTIFF...';
+    statusTop.textContent = 'Computing transform and writing GeoTIFF...';
+    try {
+      const res = await fetch('/api/georef', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ pixels: pixPts, lonlats: geoPts })
+      });
+      const j = await res.json();
+      if (!j.ok) throw new Error(j.error||'Unknown error');
+      const msg = `Saved: ${j.out_tif}  |  median ${j.median_err_deg.toFixed(6)} deg`;
+      status.textContent = msg; statusTop.textContent = msg;
+    } catch (e) {
+      const msg = 'Error: ' + e.message;
+      status.textContent = msg; statusTop.textContent = msg;
+    }
+  }
+  document.getElementById('saveBtn').onclick = computeAndSave;
+  document.getElementById('saveBtnLeft').onclick = computeAndSave;
+  document.getElementById('saveBtnTop').onclick = computeAndSave;
+  document.getElementById('saveBtnFab').onclick = computeAndSave;
+  // Keyboard shortcut: Cmd/Ctrl+Enter
+  window.addEventListener('keydown', (e)=>{
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault(); computeAndSave();
+    }
+  });
+  </script>
+</body>
+</html>
