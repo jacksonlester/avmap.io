@@ -1,18 +1,14 @@
 paths:
-  image_georef: ../interim/georef.tif
-  out_geojson: ../processed/boundary.geojson
+  image_georef: "../interim/georef_recolor.tif"
+  out_geojson: "../processed/boundary.geojson"
+
 extract:
-  hsv_lower:
-  - 90
-  - 50
-  - 50
-  hsv_upper:
-  - 130
-  - 255
-  - 255
-  close_kernel: 9
+  hsv_lower: [90, 50, 50]
+  hsv_upper: [130, 255, 255]
+  close_kernel: 7
   simplify_ratio: 0.0005
-  min_ring_length: 20
+  min_ring_length: 8
+
 post:
   smooth_radius_m: 70
   simplify_tolerance_m: 10
