@@ -113,7 +113,7 @@ MAP_HTML = r"""<!doctype html>
 </head>
 <body>
   <header>
-    <strong>Robotaxi.ai</strong>
+    <strong>avmap.io</strong>
     <a href=\"index.html\" class=\"active\">Map</a>
     <a href=\"companies.html\">Companies</a>
     <a href=\"cities.html\">Cities</a>
