@@ -1,1 +1,0 @@
-dnsfeed({"country":"US","state":"CA","stateName":"California","continent":"NA"})

@@ -7,3 +7,6 @@ pycache/
 /migration_raw_to_interim.log
 /batch_waymo_boundaries.log
 /tmp/
+
+# Ignore local sources
+Sources/
