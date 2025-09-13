@@ -2,11 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ServiceArea, MapFilters, COMPANY_COLORS } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { MapPinIcon } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface MapProps {
   serviceAreas: ServiceArea[];
@@ -18,27 +13,15 @@ interface MapProps {
 export function Map({ serviceAreas, filters, onServiceAreaClick, className }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
-  const [mapboxToken, setMapboxToken] = useState<string>('');
-  const [tokenEntered, setTokenEntered] = useState(false);
   const [loadedAreas, setLoadedAreas] = useState<Set<string>>(new Set());
 
-  // Load token from localStorage on mount
+  // Initialize map
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('mapbox_token');
-      if (saved) {
-        setMapboxToken(saved);
-      }
-    } catch (error) {
-      console.warn('Failed to load saved token:', error);
-    }
-  }, []);
+    if (!mapContainer.current || map.current) return;
 
-  // Initialize map when token is provided
-  useEffect(() => {
-    if (!mapContainer.current || !mapboxToken || map.current) return;
-
-    mapboxgl.accessToken = mapboxToken;
+    // Replace with your actual Mapbox public token
+    // This is safe for frontend use - just set up domain restrictions in your Mapbox dashboard
+    mapboxgl.accessToken = 'pk.eyJ1IjoieW91cm1hcGJveHVzZXJuYW1lIiwiYSI6InlvdXJhY2Nlc3N0b2tlbiJ9.example';
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -65,16 +48,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     // Surface mapbox style/token errors
     map.current.on('error', (e) => {
       console.error('Mapbox error:', e?.error || e);
-      toast.error('Map failed to load. Check token and allowed origins.');
-      try { 
-        localStorage.removeItem('mapbox_token'); 
-        setMapboxToken('');
-      } catch (error) {
-        console.warn('Failed to clear token:', error);
-      }
     });
-
-    setTokenEntered(true);
 
     // Cleanup
     return () => {
@@ -83,45 +57,17 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
         map.current = null;
       }
     };
-  }, [mapboxToken]);
+  }, []);
 
-  // Load and display service areas
+  // Load all service areas once when map is ready
   useEffect(() => {
-    if (!map.current || !tokenEntered) return;
+    if (!map.current) return;
 
     const currentMap = map.current;
 
-    // Filter service areas based on current filters
-    const filteredAreas = serviceAreas.filter(area => {
-      const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-      const statusMatch = filters.statuses.length === 0 || filters.statuses.includes(area.status);
-      return companyMatch && statusMatch;
-    });
-
-    const filteredAreaIds = new Set(filteredAreas.map(area => area.id));
-    
-    // Remove areas that should no longer be displayed
-    serviceAreas.forEach(area => {
-      const fillLayerId = `${area.id}-fill`;
-      const lineLayerId = `${area.id}-line`;
-      
-      // Only remove if this area shouldn't be displayed anymore
-      if (!filteredAreaIds.has(area.id)) {
-        if (currentMap.getLayer(fillLayerId)) {
-          currentMap.removeLayer(fillLayerId);
-        }
-        if (currentMap.getLayer(lineLayerId)) {
-          currentMap.removeLayer(lineLayerId);
-        }
-        if (currentMap.getSource(area.id)) {
-          currentMap.removeSource(area.id);
-        }
-      }
-    });
-
-    // Add filtered areas to map (only if not already present)
-    filteredAreas.forEach(async (area) => {
-      if (currentMap.getSource(area.id)) return;
+    // Load all service areas that haven't been loaded yet
+    serviceAreas.forEach(async (area) => {
+      if (loadedAreas.has(area.id)) return;
 
       try {
         const response = await fetch(area.geojsonPath);
@@ -144,6 +90,9 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
           paint: {
             'fill-color': color,
             'fill-opacity': 0.3
+          },
+          layout: {
+            visibility: 'visible'
           }
         });
 
@@ -156,6 +105,9 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
             'line-color': color,
             'line-width': 2,
             'line-opacity': 0.8
+          },
+          layout: {
+            visibility: 'visible'
           }
         });
 
@@ -190,13 +142,43 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
           }
         });
 
-        // area loaded
+        // Mark as loaded
+        setLoadedAreas(prev => new Set([...prev, area.id]));
       } catch (error) {
         console.error(`Failed to load area ${area.id}:`, error);
       }
     });
 
-  }, [serviceAreas, filters, tokenEntered, onServiceAreaClick]);
+  }, [serviceAreas, loadedAreas, onServiceAreaClick]);
+
+  // Update visibility based on filters
+  useEffect(() => {
+    if (!map.current) return;
+
+    const currentMap = map.current;
+
+    // Filter service areas based on current filters
+    const filteredAreas = serviceAreas.filter(area => {
+      const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
+      const statusMatch = filters.statuses.length === 0 || filters.statuses.includes(area.status);
+      return companyMatch && statusMatch;
+    });
+
+    const filteredAreaIds = new Set(filteredAreas.map(area => area.id));
+    
+    // Update visibility for all loaded areas
+    serviceAreas.forEach(area => {
+      const fillLayerId = `${area.id}-fill`;
+      const lineLayerId = `${area.id}-line`;
+      
+      if (currentMap.getLayer(fillLayerId) && currentMap.getLayer(lineLayerId)) {
+        const visibility = filteredAreaIds.has(area.id) ? 'visible' : 'none';
+        currentMap.setLayoutProperty(fillLayerId, 'visibility', visibility);
+        currentMap.setLayoutProperty(lineLayerId, 'visibility', visibility);
+      }
+    });
+
+  }, [serviceAreas, filters]);
 
   // Theme change handler
   useEffect(() => {
@@ -206,97 +188,15 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       const isDark = document.documentElement.classList.contains('dark');
       const style = isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
       
-      // Store current filter state to re-apply after style change
-      const currentFilters = { ...filters };
-      const currentServiceAreas = [...serviceAreas];
+      // Store current loaded areas to re-add after style change
+      const currentLoadedAreas = new Set(loadedAreas);
       
       map.current?.setStyle(style);
       
       // Re-add service areas after style loads
       map.current?.on('style.load', () => {
-        // Filter and re-add service areas
-        const filteredAreas = currentServiceAreas.filter(area => {
-          const companyMatch = currentFilters.companies.length === 0 || currentFilters.companies.includes(area.company);
-          const statusMatch = currentFilters.statuses.length === 0 || currentFilters.statuses.includes(area.status);
-          return companyMatch && statusMatch;
-        });
-
-        // Re-add each service area
-        filteredAreas.forEach(async (area) => {
-          try {
-            const response = await fetch(area.geojsonPath);
-            const geojson = await response.json();
-            
-            const companyConfig = COMPANY_COLORS[area.company];
-            const color = companyConfig.color;
-
-            // Add source
-            map.current?.addSource(area.id, {
-              type: 'geojson',
-              data: geojson
-            });
-
-            // Add fill layer
-            map.current?.addLayer({
-              id: `${area.id}-fill`,
-              type: 'fill',
-              source: area.id,
-              paint: {
-                'fill-color': color,
-                'fill-opacity': 0.3
-              }
-            });
-
-            // Add line layer
-            map.current?.addLayer({
-              id: `${area.id}-line`,
-              type: 'line',
-              source: area.id,
-              paint: {
-                'line-color': color,
-                'line-width': 2,
-                'line-opacity': 0.8
-              }
-            });
-
-            // Re-add hover effects
-            map.current?.on('mouseenter', `${area.id}-fill`, () => {
-              if (map.current) {
-                map.current.getCanvas().style.cursor = 'pointer';
-                map.current.setPaintProperty(`${area.id}-line`, 'line-width', 3);
-                map.current.setPaintProperty(`${area.id}-fill`, 'fill-opacity', 0.5);
-              }
-            });
-
-            map.current?.on('mouseleave', `${area.id}-fill`, () => {
-              if (map.current) {
-                map.current.getCanvas().style.cursor = '';
-                map.current.setPaintProperty(`${area.id}-line`, 'line-width', 2);
-                map.current.setPaintProperty(`${area.id}-fill`, 'fill-opacity', 0.3);
-              }
-            });
-
-            // Re-add click handler
-            map.current?.on('click', `${area.id}-fill`, (e) => {
-              if (e.features?.[0] && map.current) {
-                const bounds = new mapboxgl.LngLatBounds();
-                const geometry = e.features[0].geometry as any;
-                
-                if (geometry.type === 'Polygon') {
-                  geometry.coordinates[0].forEach((coord: [number, number]) => {
-                    bounds.extend(coord);
-                  });
-                }
-                
-                map.current.fitBounds(bounds, { padding: 50 });
-                onServiceAreaClick(area);
-              }
-            });
-
-          } catch (error) {
-            console.error(`Failed to re-load area ${area.id}:`, error);
-          }
-        });
+        // Reset loaded areas to trigger re-loading after style change
+        setLoadedAreas(new Set());
       });
     };
 
@@ -308,80 +208,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     });
 
     return () => observer.disconnect();
-  }, [filters, serviceAreas, onServiceAreaClick, mapboxToken]);
-
-  if (!mapboxToken) {
-    return (
-      <div className={`relative ${className}`}>
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <MapPinIcon className="h-5 w-5" />
-                  <h3 className="text-lg font-semibold">Enter Mapbox Token</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Enter your Mapbox public token to load the map. You can get one at{' '}
-                  <a 
-                    href="https://mapbox.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="underline"
-                  >
-                    mapbox.com
-                  </a>
-                </p>
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    placeholder="pk.eyJ1IjoieW91cnVzZXJuYW1lIiwi..."
-                    value={mapboxToken}
-                    onChange={(e) => {
-                      const token = e.target.value;
-                      setMapboxToken(token);
-                      // Auto-save as they type
-                      if (token.startsWith('pk.') && token.length > 50) {
-                        try {
-                          localStorage.setItem('mapbox_token', token.trim());
-                        } catch (error) {
-                          console.warn('Failed to auto-save token:', error);
-                        }
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && mapboxToken.trim()) {
-                        try {
-                          localStorage.setItem('mapbox_token', mapboxToken.trim());
-                          setMapboxToken(mapboxToken.trim());
-                        } catch (error) {
-                          console.warn('Failed to save token:', error);
-                        }
-                      }
-                    }}
-                  />
-                  <Button 
-                    className="w-full" 
-                    onClick={() => { 
-                      try { 
-                        localStorage.setItem('mapbox_token', mapboxToken.trim()); 
-                        setMapboxToken(mapboxToken.trim());
-                      } catch (error) {
-                        console.warn('Failed to save token:', error);
-                      }
-                    }}
-                    disabled={!mapboxToken.trim()}
-                  >
-                    Save & Load Map
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  }, [loadedAreas]);
 
   return (
     <div className={className}>
