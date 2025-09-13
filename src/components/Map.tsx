@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MapPinIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface MapProps {
   serviceAreas: ServiceArea[];
@@ -20,6 +21,17 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
   const [mapboxToken, setMapboxToken] = useState<string>('');
   const [tokenEntered, setTokenEntered] = useState(false);
   const [loadedAreas, setLoadedAreas] = useState<Set<string>>(new Set());
+
+  // Load token from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('mapbox_token');
+      if (saved) {
+        setMapboxToken(saved);
+        setTokenEntered(true);
+      }
+    } catch {}
+  }, []);
 
   // Initialize map when token is provided
   useEffect(() => {
@@ -48,6 +60,14 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     if (isDark) {
       map.current.setStyle('mapbox://styles/mapbox/dark-v11');
     }
+
+    // Surface mapbox style/token errors
+    map.current.on('error', (e) => {
+      console.error('Mapbox error:', e?.error || e);
+      toast.error('Map failed to load. Check token and allowed origins.');
+      try { localStorage.removeItem('mapbox_token'); } catch {}
+      setTokenEntered(false);
+    });
 
     setTokenEntered(true);
 
@@ -91,7 +111,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
     // Add filtered areas to map
     filteredAreas.forEach(async (area) => {
-      if (loadedAreas.has(area.id)) return;
+      if (currentMap.getSource(area.id)) return;
 
       try {
         const response = await fetch(area.geojsonPath);
@@ -160,13 +180,13 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
           }
         });
 
-        setLoadedAreas(prev => new Set(prev).add(area.id));
+        // area loaded
       } catch (error) {
         console.error(`Failed to load area ${area.id}:`, error);
       }
     });
 
-  }, [serviceAreas, filters, tokenEntered, onServiceAreaClick, loadedAreas]);
+  }, [serviceAreas, filters, tokenEntered, onServiceAreaClick]);
 
   // Theme change handler
   useEffect(() => {
@@ -219,7 +239,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
                   />
                   <Button 
                     className="w-full" 
-                    onClick={() => setTokenEntered(true)}
+                    onClick={() => { try { localStorage.setItem('mapbox_token', mapboxToken.trim()); } catch {} setTokenEntered(true); }}
                     disabled={!mapboxToken.trim()}
                   >
                     Load Map
