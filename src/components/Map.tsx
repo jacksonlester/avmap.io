@@ -2,6 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ServiceArea, MapFilters, COMPANY_COLORS } from '@/types';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { MapPinIcon } from 'lucide-react';
+import { toast } from 'sonner';
+
+// IMPORTANT: Set your Mapbox public token here to avoid user input.
+// Protect it by restricting allowed URLs in your Mapbox dashboard.
+const HARDCODED_MAPBOX_PUBLIC_TOKEN: string = '';
 
 interface MapProps {
   serviceAreas: ServiceArea[];
@@ -14,14 +23,23 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loadedAreas, setLoadedAreas] = useState<Set<string>>(new Set());
+  const [token, setToken] = useState<string>(() => {
+    try {
+      if (HARDCODED_MAPBOX_PUBLIC_TOKEN && HARDCODED_MAPBOX_PUBLIC_TOKEN.startsWith('pk.')) {
+        return HARDCODED_MAPBOX_PUBLIC_TOKEN;
+      }
+      const saved = localStorage.getItem('mapbox_token');
+      return saved || '';
+    } catch {
+      return HARDCODED_MAPBOX_PUBLIC_TOKEN || '';
+    }
+  });
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    if (!mapContainer.current || map.current || !token) return;
 
-    // Replace with your actual Mapbox public token
-    // This is safe for frontend use - just set up domain restrictions in your Mapbox dashboard
-    mapboxgl.accessToken = 'pk.eyJ1IjoieW91cm1hcGJveHVzZXJuYW1lIiwiYSI6InlvdXJhY2Nlc3N0b2tlbiJ9.example';
+    mapboxgl.accessToken = token;
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -33,9 +51,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
     // Add navigation controls
     map.current.addControl(
-      new mapboxgl.NavigationControl({
-        visualizePitch: true,
-      }),
+      new mapboxgl.NavigationControl({ visualizePitch: true }),
       'top-right'
     );
 
@@ -48,6 +64,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     // Surface mapbox style/token errors
     map.current.on('error', (e) => {
       console.error('Mapbox error:', e?.error || e);
+      toast.error('Map failed to load. Check token and allowed origins.');
     });
 
     // Cleanup
@@ -57,7 +74,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
         map.current = null;
       }
     };
-  }, []);
+  }, [token]);
 
   // Load all service areas once when map is ready
   useEffect(() => {
@@ -178,7 +195,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       }
     });
 
-  }, [serviceAreas, filters]);
+  }, [serviceAreas, filters, loadedAreas]);
 
   // Theme change handler
   useEffect(() => {
@@ -209,6 +226,51 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
     return () => observer.disconnect();
   }, [loadedAreas]);
+
+  if (!token) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+          <Card className="w-full max-w-md mx-4">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <MapPinIcon className="h-5 w-5" />
+                  <h3 className="text-lg font-semibold">Enter Mapbox Token</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Enter your Mapbox public token to load the map. You can get one at 
+                  <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="underline"> mapbox.com</a>. To avoid prompts, set the token in code and restrict it to your domain.
+                </p>
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    placeholder="pk.eyJ1IjoieW91cm5hbWUuLi4"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && token.trim()) {
+                        try { localStorage.setItem('mapbox_token', token.trim()); setToken(token.trim()); } catch (error) { console.warn('Failed to save token:', error); }
+                      }
+                    }}
+                  />
+                  <Button 
+                    className="w-full" 
+                    onClick={() => { 
+                      try { localStorage.setItem('mapbox_token', token.trim()); setToken(token.trim()); } catch (error) { console.warn('Failed to save token:', error); }
+                    }}
+                    disabled={!token.trim()}
+                  >
+                    Save & Load Map
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={className}>
