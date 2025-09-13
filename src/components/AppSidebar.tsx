@@ -6,6 +6,7 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -19,7 +20,10 @@ export function AppSidebar({ filters, onFiltersChange }: AppSidebarProps) {
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
-      <SidebarContent>
+      <SidebarContent className="pt-16">
+        <div className="px-4 pb-2">
+          <SidebarTrigger />
+        </div>
         <SidebarGroup>
           <SidebarGroupLabel>Filters</SidebarGroupLabel>
           <SidebarGroupContent>

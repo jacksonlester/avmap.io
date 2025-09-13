@@ -75,13 +75,10 @@ const Index = () => {
         <div className="flex flex-1 relative overflow-hidden w-full">
           {/* Desktop Sidebar */}
           {!isMobile && (
-            <>
-              <SidebarTrigger className="absolute top-4 left-4 z-50" />
-              <AppSidebar 
-                filters={filters}
-                onFiltersChange={handleFiltersChange}
-              />
-            </>
+            <AppSidebar 
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+            />
           )}
 
           {/* Map */}
