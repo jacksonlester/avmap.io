@@ -206,9 +206,9 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     });
 
     return () => observer.disconnect();
-  }, [tokenEntered]);
+  }, [mapboxToken]);
 
-  if (!tokenEntered) {
+  if (!mapboxToken) {
     return (
       <div className={`relative ${className}`}>
         <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
