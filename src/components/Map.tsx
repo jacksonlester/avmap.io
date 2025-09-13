@@ -200,7 +200,99 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     const handleThemeChange = () => {
       const isDark = document.documentElement.classList.contains('dark');
       const style = isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11';
+      
+      // Store current filter state to re-apply after style change
+      const currentFilters = { ...filters };
+      const currentServiceAreas = [...serviceAreas];
+      
       map.current?.setStyle(style);
+      
+      // Re-add service areas after style loads
+      map.current?.on('style.load', () => {
+        // Filter and re-add service areas
+        const filteredAreas = currentServiceAreas.filter(area => {
+          const companyMatch = currentFilters.companies.length === 0 || currentFilters.companies.includes(area.company);
+          const statusMatch = currentFilters.statuses.length === 0 || currentFilters.statuses.includes(area.status);
+          return companyMatch && statusMatch;
+        });
+
+        // Re-add each service area
+        filteredAreas.forEach(async (area) => {
+          try {
+            const response = await fetch(area.geojsonPath);
+            const geojson = await response.json();
+            
+            const companyConfig = COMPANY_COLORS[area.company];
+            const color = companyConfig.color;
+
+            // Add source
+            map.current?.addSource(area.id, {
+              type: 'geojson',
+              data: geojson
+            });
+
+            // Add fill layer
+            map.current?.addLayer({
+              id: `${area.id}-fill`,
+              type: 'fill',
+              source: area.id,
+              paint: {
+                'fill-color': color,
+                'fill-opacity': 0.3
+              }
+            });
+
+            // Add line layer
+            map.current?.addLayer({
+              id: `${area.id}-line`,
+              type: 'line',
+              source: area.id,
+              paint: {
+                'line-color': color,
+                'line-width': 2,
+                'line-opacity': 0.8
+              }
+            });
+
+            // Re-add hover effects
+            map.current?.on('mouseenter', `${area.id}-fill`, () => {
+              if (map.current) {
+                map.current.getCanvas().style.cursor = 'pointer';
+                map.current.setPaintProperty(`${area.id}-line`, 'line-width', 3);
+                map.current.setPaintProperty(`${area.id}-fill`, 'fill-opacity', 0.5);
+              }
+            });
+
+            map.current?.on('mouseleave', `${area.id}-fill`, () => {
+              if (map.current) {
+                map.current.getCanvas().style.cursor = '';
+                map.current.setPaintProperty(`${area.id}-line`, 'line-width', 2);
+                map.current.setPaintProperty(`${area.id}-fill`, 'fill-opacity', 0.3);
+              }
+            });
+
+            // Re-add click handler
+            map.current?.on('click', `${area.id}-fill`, (e) => {
+              if (e.features?.[0] && map.current) {
+                const bounds = new mapboxgl.LngLatBounds();
+                const geometry = e.features[0].geometry as any;
+                
+                if (geometry.type === 'Polygon') {
+                  geometry.coordinates[0].forEach((coord: [number, number]) => {
+                    bounds.extend(coord);
+                  });
+                }
+                
+                map.current.fitBounds(bounds, { padding: 50 });
+                onServiceAreaClick(area);
+              }
+            });
+
+          } catch (error) {
+            console.error(`Failed to re-load area ${area.id}:`, error);
+          }
+        });
+      });
     };
 
     // Listen for theme changes
@@ -211,7 +303,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     });
 
     return () => observer.disconnect();
-  }, [mapboxToken]);
+  }, [filters, serviceAreas, onServiceAreaClick, mapboxToken]);
 
   if (!mapboxToken) {
     return (
