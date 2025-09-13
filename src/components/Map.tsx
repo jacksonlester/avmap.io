@@ -98,23 +98,28 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       return companyMatch && statusMatch;
     });
 
-    // Remove existing layers and sources for all areas first
+    const filteredAreaIds = new Set(filteredAreas.map(area => area.id));
+    
+    // Remove areas that should no longer be displayed
     serviceAreas.forEach(area => {
       const fillLayerId = `${area.id}-fill`;
       const lineLayerId = `${area.id}-line`;
       
-      if (currentMap.getLayer(fillLayerId)) {
-        currentMap.removeLayer(fillLayerId);
-      }
-      if (currentMap.getLayer(lineLayerId)) {
-        currentMap.removeLayer(lineLayerId);
-      }
-      if (currentMap.getSource(area.id)) {
-        currentMap.removeSource(area.id);
+      // Only remove if this area shouldn't be displayed anymore
+      if (!filteredAreaIds.has(area.id)) {
+        if (currentMap.getLayer(fillLayerId)) {
+          currentMap.removeLayer(fillLayerId);
+        }
+        if (currentMap.getLayer(lineLayerId)) {
+          currentMap.removeLayer(lineLayerId);
+        }
+        if (currentMap.getSource(area.id)) {
+          currentMap.removeSource(area.id);
+        }
       }
     });
 
-    // Add filtered areas to map
+    // Add filtered areas to map (only if not already present)
     filteredAreas.forEach(async (area) => {
       if (currentMap.getSource(area.id)) return;
 
