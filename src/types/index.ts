@@ -19,28 +19,23 @@ export interface MapFilters {
 export interface CompanyConfig {
   name: string;
   color: string;
-  darkColor: string;
 }
 
 export const COMPANY_COLORS: Record<string, CompanyConfig> = {
   'Waymo': {
     name: 'Waymo',
-    color: 'hsl(var(--waymo-blue))',
-    darkColor: 'hsl(var(--waymo-blue-dark))'
+    color: '#4285F4'
   },
   'Tesla': {
     name: 'Tesla', 
-    color: 'hsl(var(--tesla-red))',
-    darkColor: 'hsl(var(--tesla-red-dark))'
+    color: '#E31937'
   },
   'Zoox': {
     name: 'Zoox',
-    color: 'hsl(var(--zoox-teal))',
-    darkColor: 'hsl(var(--zoox-teal-dark))'
+    color: '#00D9FF'
   },
   'May Mobility': {
     name: 'May Mobility',
-    color: 'hsl(var(--may-mobility-green))',
-    darkColor: 'hsl(var(--may-mobility-green-dark))'
+    color: '#00B04F'
   }
 };

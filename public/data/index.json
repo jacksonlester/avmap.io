@@ -71,6 +71,14 @@
       "status": "Commercial",
       "geojsonPath": "/areas/zoox-las-vegas.geojson",
       "lastUpdated": "2025-09-01"
+    },
+    {
+      "id": "may-mobility-atlanta",
+      "name": "Atlanta",
+      "company": "May Mobility",
+      "status": "Commercial",
+      "geojsonPath": "/areas/may-mobility-atlanta.geojson",
+      "lastUpdated": "2025-09-01"
     }
   ]
 }

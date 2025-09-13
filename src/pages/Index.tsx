@@ -4,8 +4,10 @@ import { Header } from '@/components/Header';
 import { Map } from '@/components/Map';
 import { Filters } from '@/components/Filters';
 import { BottomSheet } from '@/components/BottomSheet';
+import { AppSidebar } from '@/components/AppSidebar';
 import { ServiceArea, ServiceAreaData, MapFilters } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,10 +16,12 @@ const Index = () => {
   const [showFilters, setShowFilters] = useState(false);
   const isMobile = useIsMobile();
 
-  // Initialize filters from URL params
+  // Initialize filters from URL params with all options checked by default
   const [filters, setFilters] = useState<MapFilters>(() => {
-    const companies = searchParams.get('company')?.split(',').filter(Boolean) || [];
-    const statuses = searchParams.get('status')?.split(',').filter(Boolean) || [];
+    const allCompanies = ['Waymo', 'Tesla', 'Zoox', 'May Mobility'];
+    const allStatuses = ['Commercial', 'Testing', 'Pilot'];
+    const companies = searchParams.get('company')?.split(',').filter(Boolean) || allCompanies;
+    const statuses = searchParams.get('status')?.split(',').filter(Boolean) || allStatuses;
     return { companies, statuses };
   });
 
@@ -64,52 +68,55 @@ const Index = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <Header onToggleFilters={toggleFilters} isMobile={isMobile} />
-      
-      <div className="flex flex-1 relative overflow-hidden">
-        {/* Desktop Filters Sidebar */}
-        {!isMobile && (
-          <div className="w-80 border-r bg-background/50 backdrop-blur-sm p-4 overflow-y-auto">
-            <Filters 
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-            />
-          </div>
-        )}
-
-        {/* Map */}
-        <div className="flex-1 relative">
-          <Map
-            serviceAreas={serviceAreas}
-            filters={filters}
-            onServiceAreaClick={handleServiceAreaClick}
-            className="w-full h-full"
-          />
-        </div>
-
-        {/* Mobile Filters Overlay */}
-        {isMobile && showFilters && (
-          <div className="absolute inset-0 z-40 bg-background/80 backdrop-blur-sm">
-            <div className="absolute top-4 left-4 right-4">
-              <Filters
+    <SidebarProvider>
+      <div className="flex flex-col h-screen bg-background w-full">
+        <Header onToggleFilters={toggleFilters} isMobile={isMobile} />
+        
+        <div className="flex flex-1 relative overflow-hidden w-full">
+          {/* Desktop Sidebar */}
+          {!isMobile && (
+            <>
+              <SidebarTrigger className="absolute top-4 left-4 z-50" />
+              <AppSidebar 
                 filters={filters}
                 onFiltersChange={handleFiltersChange}
-                onClose={toggleFilters}
-                isMobile={true}
               />
-            </div>
-          </div>
-        )}
-      </div>
+            </>
+          )}
 
-      {/* Bottom Sheet */}
-      <BottomSheet
-        serviceArea={selectedArea}
-        isOpen={!!selectedArea}
-        onClose={handleCloseBottomSheet}
-      />
-    </div>
+          {/* Map */}
+          <div className="flex-1 relative">
+            <Map
+              serviceAreas={serviceAreas}
+              filters={filters}
+              onServiceAreaClick={handleServiceAreaClick}
+              className="w-full h-full"
+            />
+          </div>
+
+          {/* Mobile Filters Overlay */}
+          {isMobile && showFilters && (
+            <div className="absolute inset-0 z-40 bg-background/80 backdrop-blur-sm">
+              <div className="absolute top-4 left-4 right-4">
+                <Filters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onClose={toggleFilters}
+                  isMobile={true}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Sheet */}
+        <BottomSheet
+          serviceArea={selectedArea}
+          isOpen={!!selectedArea}
+          onClose={handleCloseBottomSheet}
+        />
+      </div>
+    </SidebarProvider>
   );
 };
 
