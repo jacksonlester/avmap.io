@@ -28,9 +28,10 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       const saved = localStorage.getItem('mapbox_token');
       if (saved) {
         setMapboxToken(saved);
-        setTokenEntered(true);
       }
-    } catch {}
+    } catch (error) {
+      console.warn('Failed to load saved token:', error);
+    }
   }, []);
 
   // Initialize map when token is provided
@@ -65,8 +66,12 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     map.current.on('error', (e) => {
       console.error('Mapbox error:', e?.error || e);
       toast.error('Map failed to load. Check token and allowed origins.');
-      try { localStorage.removeItem('mapbox_token'); } catch {}
-      setTokenEntered(false);
+      try { 
+        localStorage.removeItem('mapbox_token'); 
+        setMapboxToken('');
+      } catch (error) {
+        console.warn('Failed to clear token:', error);
+      }
     });
 
     setTokenEntered(true);
@@ -235,14 +240,42 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
                     type="password"
                     placeholder="pk.eyJ1IjoieW91cnVzZXJuYW1lIiwi..."
                     value={mapboxToken}
-                    onChange={(e) => setMapboxToken(e.target.value)}
+                    onChange={(e) => {
+                      const token = e.target.value;
+                      setMapboxToken(token);
+                      // Auto-save as they type
+                      if (token.startsWith('pk.') && token.length > 50) {
+                        try {
+                          localStorage.setItem('mapbox_token', token.trim());
+                        } catch (error) {
+                          console.warn('Failed to auto-save token:', error);
+                        }
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && mapboxToken.trim()) {
+                        try {
+                          localStorage.setItem('mapbox_token', mapboxToken.trim());
+                          setMapboxToken(mapboxToken.trim());
+                        } catch (error) {
+                          console.warn('Failed to save token:', error);
+                        }
+                      }
+                    }}
                   />
                   <Button 
                     className="w-full" 
-                    onClick={() => { try { localStorage.setItem('mapbox_token', mapboxToken.trim()); } catch {} setTokenEntered(true); }}
+                    onClick={() => { 
+                      try { 
+                        localStorage.setItem('mapbox_token', mapboxToken.trim()); 
+                        setMapboxToken(mapboxToken.trim());
+                      } catch (error) {
+                        console.warn('Failed to save token:', error);
+                      }
+                    }}
                     disabled={!mapboxToken.trim()}
                   >
-                    Load Map
+                    Save & Load Map
                   </Button>
                 </div>
               </div>
