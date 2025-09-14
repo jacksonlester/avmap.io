@@ -20,11 +20,11 @@ export function AppSidebar({ filters, onFiltersChange }: AppSidebarProps) {
 
   return (
     <div className="relative">
-      <Sidebar variant="sidebar" collapsible="icon" className="border-r-0">
-        <SidebarContent className="pt-16 pr-2">
+      <Sidebar variant="sidebar" collapsible="icon">
+        <SidebarContent className="pt-16">
           <SidebarGroup>
-            <SidebarGroupLabel className="pr-2">Filters</SidebarGroupLabel>
-            <SidebarGroupContent className="pr-2">
+            <SidebarGroupLabel>Filters</SidebarGroupLabel>
+            <SidebarGroupContent>
               {state !== "collapsed" && (
                 <Filters 
                   filters={filters}
