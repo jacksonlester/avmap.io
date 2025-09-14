@@ -23,7 +23,7 @@
     "companies": ["Waymo"],
     "tags": ["seattle", "bellevue", "expansion"],
     "excerpt": "Waymo's autonomous vehicles have been spotted testing on roads around Seattle and Bellevue, suggesting potential expansion to the Pacific Northwest.",
-    "heroImage": "/images/news-autonomous-cars.jpg"
+    "heroImage": "/images/waymo-seattle-spotted.jpg"
   },
   {
     "id": "3",
@@ -36,7 +36,7 @@
     "companies": ["Waymo", "Tesla", "Zoox"],
     "tags": ["airport", "fifa", "superbowl", "competition"],
     "excerpt": "As major sporting events approach, autonomous vehicle companies are positioning themselves for high-profile deployments at key transportation hubs.",
-    "heroImage": "/images/news-airport-transport.jpg"
+    "heroImage": "/images/waymo-san-jose-airport.webp"
   },
   {
     "id": "4",
@@ -75,7 +75,7 @@
     "companies": ["Lyft", "Uber", "Waymo"],
     "tags": ["robotaxi", "competition", "market-share"],
     "excerpt": "Lyft's conservative approach to robotaxi deployment contrasts sharply with the aggressive expansion strategies of competitors Uber and Waymo.",
-    "heroImage": "/images/news-autonomous-cars.jpg"
+    "heroImage": "/images/lyft-may-mobility-atlanta.jpg"
   },
   {
     "id": "7",
