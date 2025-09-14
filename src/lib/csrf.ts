@@ -1,10 +1,18 @@
-import crypto from 'crypto';
-
 export class CSRFService {
   private static readonly TOKEN_KEY = 'csrf_token';
 
   static generateToken(): string {
-    return crypto.randomBytes(32).toString('hex');
+    // Browser-compatible random token generation
+    const array = new Uint8Array(32);
+    if (typeof window !== 'undefined' && window.crypto) {
+      window.crypto.getRandomValues(array);
+    } else {
+      // Fallback for environments without crypto
+      for (let i = 0; i < array.length; i++) {
+        array[i] = Math.floor(Math.random() * 256);
+      }
+    }
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
   }
 
   static setToken(token: string): void {

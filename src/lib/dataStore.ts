@@ -1,5 +1,3 @@
-import fs from 'fs/promises';
-import path from 'path';
 import { AuditLogger } from './auditLogger';
 
 export interface DataStore {
@@ -11,51 +9,32 @@ export interface DataStore {
   restore<T>(entity: string, id: string, timestamp: string, actor: string): Promise<void>;
 }
 
-export class FileJsonStore implements DataStore {
-  private readonly basePath: string;
+export class BrowserJsonStore implements DataStore {
+  private readonly storagePrefix: string;
 
-  constructor(basePath: string = './data') {
-    this.basePath = basePath;
+  constructor(storagePrefix: string = 'avmap_admin') {
+    this.storagePrefix = storagePrefix;
   }
 
-  private getEntityPath(entity: string): string {
-    return path.join(this.basePath, `${entity}.json`);
+  private getStorageKey(entity: string): string {
+    return `${this.storagePrefix}_${entity}`;
   }
 
-  private getVersionsPath(entity: string, id: string): string {
-    return path.join(this.basePath, '.versions', entity, id);
-  }
-
-  private async ensureDir(dirPath: string): Promise<void> {
-    try {
-      await fs.mkdir(dirPath, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-  }
-
-  private async saveVersion<T>(entity: string, id: string, data: T): Promise<string> {
-    const timestamp = new Date().toISOString();
-    const versionsDir = this.getVersionsPath(entity, id);
-    await this.ensureDir(versionsDir);
-    
-    const versionFile = path.join(versionsDir, `${timestamp}.json`);
-    await fs.writeFile(versionFile, JSON.stringify(data, null, 2));
-    
-    return timestamp;
+  private getVersionKey(entity: string, id: string): string {
+    return `${this.storagePrefix}_versions_${entity}_${id}`;
   }
 
   async read<T>(entity: string, id: string): Promise<T | null> {
     try {
-      const entityPath = this.getEntityPath(entity);
-      const content = await fs.readFile(entityPath, 'utf-8');
-      const data = JSON.parse(content);
+      const key = this.getStorageKey(entity);
+      const stored = localStorage.getItem(key);
+      if (!stored) return null;
+      
+      const data = JSON.parse(stored);
       return data[id] || null;
     } catch (error) {
-      if ((error as any).code === 'ENOENT') {
-        return null;
-      }
-      throw error;
+      console.error(`Failed to read ${entity}:${id}`, error);
+      return null;
     }
   }
 
@@ -65,58 +44,54 @@ export class FileJsonStore implements DataStore {
       throw new Error('System is in read-only mode');
     }
 
-    const entityPath = this.getEntityPath(entity);
-    
-    // Read existing data
-    let existingData: Record<string, T> = {};
     try {
-      const content = await fs.readFile(entityPath, 'utf-8');
-      existingData = JSON.parse(content);
+      const key = this.getStorageKey(entity);
+      
+      // Read existing data
+      let existingData: Record<string, T> = {};
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        existingData = JSON.parse(stored);
+      }
+
+      const oldValue = existingData[id];
+      
+      // Save version before updating
+      if (oldValue) {
+        await this.saveVersion(entity, id, oldValue);
+      }
+
+      // Update data
+      existingData[id] = data;
+      localStorage.setItem(key, JSON.stringify(existingData));
+
+      // Save new version
+      const timestamp = await this.saveVersion(entity, id, data);
+
+      // Log to audit
+      await AuditLogger.log({
+        entity,
+        entityId: id,
+        action: oldValue ? 'update' : 'create',
+        actor,
+        message: message || `${oldValue ? 'Updated' : 'Created'} ${entity} ${id}`,
+        timestamp,
+        diff: this.computeDiff(oldValue, data)
+      });
     } catch (error) {
-      // File might not exist yet
+      console.error(`Failed to write ${entity}:${id}`, error);
+      throw error;
     }
-
-    const oldValue = existingData[id];
-    
-    // Save version before updating
-    if (oldValue) {
-      await this.saveVersion(entity, id, oldValue);
-    }
-
-    // Update data
-    existingData[id] = data;
-    
-    // Ensure directory exists
-    await this.ensureDir(path.dirname(entityPath));
-    
-    // Write updated data
-    await fs.writeFile(entityPath, JSON.stringify(existingData, null, 2));
-
-    // Save new version
-    const timestamp = await this.saveVersion(entity, id, data);
-
-    // Log to audit
-    await AuditLogger.log({
-      entity,
-      entityId: id,
-      action: oldValue ? 'update' : 'create',
-      actor,
-      message: message || `${oldValue ? 'Updated' : 'Created'} ${entity} ${id}`,
-      timestamp,
-      diff: this.computeDiff(oldValue, data)
-    });
   }
 
   async list<T>(entity: string): Promise<Record<string, T>> {
     try {
-      const entityPath = this.getEntityPath(entity);
-      const content = await fs.readFile(entityPath, 'utf-8');
-      return JSON.parse(content);
+      const key = this.getStorageKey(entity);
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : {};
     } catch (error) {
-      if ((error as any).code === 'ENOENT') {
-        return {};
-      }
-      throw error;
+      console.error(`Failed to list ${entity}`, error);
+      return {};
     }
   }
 
@@ -125,60 +100,48 @@ export class FileJsonStore implements DataStore {
       throw new Error('System is in read-only mode');
     }
 
-    const entityPath = this.getEntityPath(entity);
-    
-    // Read existing data
-    let existingData: Record<string, any> = {};
     try {
-      const content = await fs.readFile(entityPath, 'utf-8');
-      existingData = JSON.parse(content);
+      const key = this.getStorageKey(entity);
+      const stored = localStorage.getItem(key);
+      if (!stored) return;
+
+      const existingData = JSON.parse(stored);
+      const oldValue = existingData[id];
+      if (!oldValue) return;
+
+      // Save final version
+      await this.saveVersion(entity, id, oldValue);
+
+      // Remove from data
+      delete existingData[id];
+      localStorage.setItem(key, JSON.stringify(existingData));
+
+      // Log to audit
+      await AuditLogger.log({
+        entity,
+        entityId: id,
+        action: 'delete',
+        actor,
+        message: message || `Deleted ${entity} ${id}`,
+        timestamp: new Date().toISOString(),
+        diff: { deleted: oldValue }
+      });
     } catch (error) {
-      return; // Nothing to delete
+      console.error(`Failed to delete ${entity}:${id}`, error);
+      throw error;
     }
-
-    const oldValue = existingData[id];
-    if (!oldValue) return;
-
-    // Save final version
-    await this.saveVersion(entity, id, oldValue);
-
-    // Remove from data
-    delete existingData[id];
-    
-    // Write updated data
-    await fs.writeFile(entityPath, JSON.stringify(existingData, null, 2));
-
-    // Log to audit
-    await AuditLogger.log({
-      entity,
-      entityId: id,
-      action: 'delete',
-      actor,
-      message: message || `Deleted ${entity} ${id}`,
-      timestamp: new Date().toISOString(),
-      diff: { deleted: oldValue }
-    });
   }
 
   async getVersions<T>(entity: string, id: string): Promise<Array<{ timestamp: string; data: T }>> {
     try {
-      const versionsDir = this.getVersionsPath(entity, id);
-      const files = await fs.readdir(versionsDir);
-      
-      const versions = await Promise.all(
-        files
-          .filter(f => f.endsWith('.json'))
-          .sort((a, b) => b.localeCompare(a)) // Latest first
-          .slice(0, 10) // Last 10 versions
-          .map(async (file) => {
-            const timestamp = file.replace('.json', '');
-            const content = await fs.readFile(path.join(versionsDir, file), 'utf-8');
-            return { timestamp, data: JSON.parse(content) };
-          })
-      );
+      const key = this.getVersionKey(entity, id);
+      const stored = localStorage.getItem(key);
+      if (!stored) return [];
 
-      return versions;
+      const versions = JSON.parse(stored) as Array<{ timestamp: string; data: T }>;
+      return versions.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, 10);
     } catch (error) {
+      console.error(`Failed to get versions for ${entity}:${id}`, error);
       return [];
     }
   }
@@ -188,34 +151,47 @@ export class FileJsonStore implements DataStore {
       throw new Error('System is in read-only mode');
     }
 
-    const versionFile = path.join(this.getVersionsPath(entity, id), `${timestamp}.json`);
+    try {
+      const versions = await this.getVersions<T>(entity, id);
+      const version = versions.find(v => v.timestamp === timestamp);
+      
+      if (!version) {
+        throw new Error(`Version ${timestamp} not found`);
+      }
+
+      await this.write(entity, id, version.data, actor, `Restored from version ${timestamp}`);
+    } catch (error) {
+      console.error(`Failed to restore ${entity}:${id} to ${timestamp}`, error);
+      throw error;
+    }
+  }
+
+  private async saveVersion<T>(entity: string, id: string, data: T): Promise<string> {
+    const timestamp = new Date().toISOString();
+    const key = this.getVersionKey(entity, id);
     
     try {
-      const content = await fs.readFile(versionFile, 'utf-8');
-      const versionData = JSON.parse(content);
+      const stored = localStorage.getItem(key);
+      const versions = stored ? JSON.parse(stored) : [];
       
-      await this.write(entity, id, versionData, actor, `Restored from version ${timestamp}`);
+      versions.push({ timestamp, data });
+      
+      // Keep only last 20 versions
+      const sortedVersions = versions
+        .sort((a: any, b: any) => b.timestamp.localeCompare(a.timestamp))
+        .slice(0, 20);
+      
+      localStorage.setItem(key, JSON.stringify(sortedVersions));
+      
+      return timestamp;
     } catch (error) {
-      throw new Error(`Failed to restore version ${timestamp}: ${error}`);
+      console.error(`Failed to save version for ${entity}:${id}`, error);
+      return timestamp;
     }
   }
 
   private isReadOnly(): boolean {
-    const readOnly = process.env.READ_ONLY;
-    const allowWrites = process.env.ALLOW_WRITES_IN_PROD;
-    
-    if (process.env.NODE_ENV === 'development') {
-      return false; // Writes always allowed in dev
-    }
-
-    if (readOnly === 'true') {
-      return true; // Explicitly read-only
-    }
-
-    if (process.env.NODE_ENV === 'production' && allowWrites !== 'true') {
-      return true; // Prod requires explicit write permission
-    }
-
+    // For demo purposes, always allow writes in browser
     return false;
   }
 
@@ -236,3 +212,6 @@ export class FileJsonStore implements DataStore {
     return Object.keys(diff).length > 0 ? diff : null;
   }
 }
+
+// Export browser-compatible store
+export const FileJsonStore = BrowserJsonStore;

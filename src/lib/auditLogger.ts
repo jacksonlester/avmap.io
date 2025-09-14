@@ -1,6 +1,3 @@
-import fs from 'fs/promises';
-import path from 'path';
-
 export interface AuditEntry {
   timestamp: string;
   actor: string;
@@ -13,30 +10,26 @@ export interface AuditEntry {
 }
 
 export class AuditLogger {
-  private static readonly AUDIT_DIR = './data/.audit';
-  private static readonly LOG_FILE = 'log.jsonl';
-
-  private static async ensureAuditDir(): Promise<void> {
-    try {
-      await fs.mkdir(this.AUDIT_DIR, { recursive: true });
-    } catch (error) {
-      // Directory might already exist
-    }
-  }
+  private static readonly STORAGE_KEY = 'avmap_admin_audit_log';
 
   static async log(entry: Omit<AuditEntry, 'timestamp'> & { timestamp?: string }): Promise<void> {
-    await this.ensureAuditDir();
-    
-    const auditEntry: AuditEntry = {
-      timestamp: entry.timestamp || new Date().toISOString(),
-      ...entry
-    };
-
-    const logLine = JSON.stringify(auditEntry) + '\n';
-    const logPath = path.join(this.AUDIT_DIR, this.LOG_FILE);
-    
     try {
-      await fs.appendFile(logPath, logLine);
+      const auditEntry: AuditEntry = {
+        timestamp: entry.timestamp || new Date().toISOString(),
+        ...entry
+      };
+
+      // Get existing logs
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      const logs = stored ? JSON.parse(stored) : [];
+      
+      // Add new entry
+      logs.push(auditEntry);
+      
+      // Keep only last 1000 entries
+      const trimmedLogs = logs.slice(-1000);
+      
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(trimmedLogs));
     } catch (error) {
       console.error('Failed to write audit log:', error);
     }
@@ -44,42 +37,32 @@ export class AuditLogger {
 
   static async getRecentEntries(limit: number = 100): Promise<AuditEntry[]> {
     try {
-      const logPath = path.join(this.AUDIT_DIR, this.LOG_FILE);
-      const content = await fs.readFile(logPath, 'utf-8');
-      
-      const lines = content.trim().split('\n').filter(Boolean);
-      const entries = lines
-        .slice(-limit) // Get last N lines
-        .map(line => JSON.parse(line))
-        .reverse(); // Most recent first
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) return [];
 
-      return entries;
+      const logs = JSON.parse(stored) as AuditEntry[];
+      return logs
+        .slice(-limit)
+        .reverse(); // Most recent first
     } catch (error) {
-      if ((error as any).code === 'ENOENT') {
-        return [];
-      }
-      throw error;
+      console.error('Failed to read audit log:', error);
+      return [];
     }
   }
 
   static async getEntitiesHistory(entity: string, entityId: string, limit: number = 50): Promise<AuditEntry[]> {
     try {
-      const logPath = path.join(this.AUDIT_DIR, this.LOG_FILE);
-      const content = await fs.readFile(logPath, 'utf-8');
-      
-      const lines = content.trim().split('\n').filter(Boolean);
-      const entries = lines
-        .map(line => JSON.parse(line))
-        .filter((entry: AuditEntry) => entry.entity === entity && entry.entityId === entityId)
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) return [];
+
+      const logs = JSON.parse(stored) as AuditEntry[];
+      return logs
+        .filter(entry => entry.entity === entity && entry.entityId === entityId)
         .slice(-limit)
         .reverse();
-
-      return entries;
     } catch (error) {
-      if ((error as any).code === 'ENOENT') {
-        return [];
-      }
-      throw error;
+      console.error('Failed to read entity history:', error);
+      return [];
     }
   }
 
@@ -89,17 +72,22 @@ export class AuditLogger {
     topActors: { actor: string; count: number }[];
   }> {
     try {
-      const logPath = path.join(this.AUDIT_DIR, this.LOG_FILE);
-      const content = await fs.readFile(logPath, 'utf-8');
-      
-      const lines = content.trim().split('\n').filter(Boolean);
-      const entries: AuditEntry[] = lines.map(line => JSON.parse(line));
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        return {
+          totalEntries: 0,
+          recentActivity: [],
+          topActors: []
+        };
+      }
+
+      const logs = JSON.parse(stored) as AuditEntry[];
 
       // Recent activity (last 7 days)
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       
-      const recentEntries = entries.filter(entry => 
+      const recentEntries = logs.filter(entry => 
         new Date(entry.timestamp) > sevenDaysAgo
       );
 
@@ -114,7 +102,7 @@ export class AuditLogger {
         .sort((a, b) => a.date.localeCompare(b.date));
 
       // Top actors
-      const actorCounts = entries.reduce((acc, entry) => {
+      const actorCounts = logs.reduce((acc, entry) => {
         acc[entry.actor] = (acc[entry.actor] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
@@ -125,11 +113,12 @@ export class AuditLogger {
         .slice(0, 10);
 
       return {
-        totalEntries: entries.length,
+        totalEntries: logs.length,
         recentActivity,
         topActors
       };
     } catch (error) {
+      console.error('Failed to get audit stats:', error);
       return {
         totalEntries: 0,
         recentActivity: [],

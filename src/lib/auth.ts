@@ -1,4 +1,16 @@
-import crypto from 'crypto';
+// Browser-compatible UUID generation
+function generateUUID(): string {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  
+  // Fallback UUID v4 generation
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
 
 // In production, these would come from Supabase secrets
 // For now, using localStorage for demo purposes
@@ -36,7 +48,7 @@ export class AuthService {
     const sessionData: SessionData = {
       email,
       loginTime: Date.now(),
-      sessionId: crypto.randomUUID()
+      sessionId: generateUUID()
     };
 
     // Store in localStorage (for demo - in production use secure HTTP-only cookies)
