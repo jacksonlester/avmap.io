@@ -1,0 +1,93 @@
+[
+  {
+    "id": "1",
+    "slug": "zoox-robotaxis-las-vegas-launch",
+    "title": "Amazon's Zoox to begin offering robotaxi rides to employees in Las Vegas",
+    "source": "AP",
+    "url": "https://apnews.com/article/amazon-zoox-robotaxis-las-vegas-bd5cb24602fb16243efcba05c7fe518f",
+    "publishedAt": "2024-11-11T00:00:00Z",
+    "type": "Launch",
+    "companies": ["Zoox", "Amazon"],
+    "tags": ["robotaxi", "employees", "las-vegas"],
+    "excerpt": "Amazon's autonomous vehicle unit Zoox announced it will begin offering robotaxi rides to employees in Las Vegas, marking a significant step toward commercial deployment.",
+    "heroImage": "/placeholder.svg"
+  },
+  {
+    "id": "2",
+    "slug": "waymo-cars-spotted-seattle",
+    "title": "Waymo cars spotted around Seattle and Bellevue",
+    "source": "FOX 13 Seattle",
+    "url": "https://www.fox13seattle.com/news/waymo-cars-spotted-seattle-bellevue",
+    "publishedAt": "2024-10-15T00:00:00Z",
+    "type": "Announcement",
+    "companies": ["Waymo"],
+    "tags": ["seattle", "bellevue", "expansion"],
+    "excerpt": "Waymo's autonomous vehicles have been spotted testing on roads around Seattle and Bellevue, suggesting potential expansion to the Pacific Northwest.",
+    "heroImage": "/placeholder.svg"
+  },
+  {
+    "id": "3",
+    "slug": "waymo-tesla-zoox-airport-competition",
+    "title": "Waymo eyes San José airport as Tesla and Zoox gear up for FIFA and Super Bowl",
+    "source": "SF Standard",
+    "url": "https://sfstandard.com/2025/09/11/waymo-san-jos-airport-tesla-zoox-fifa-superbowl-robotaxi/",
+    "publishedAt": "2025-09-11T00:00:00Z",
+    "type": "Analysis",
+    "companies": ["Waymo", "Tesla", "Zoox"],
+    "tags": ["airport", "fifa", "superbowl", "competition"],
+    "excerpt": "As major sporting events approach, autonomous vehicle companies are positioning themselves for high-profile deployments at key transportation hubs.",
+    "heroImage": "/placeholder.svg"
+  },
+  {
+    "id": "4",
+    "slug": "waymo-google-x-lab-profile",
+    "title": "The lab behind Waymo and Google Glass that wants to reshape your life",
+    "source": "NPR",
+    "url": "https://www.npr.org/2025/09/12/nx-s1-5538018/the-lab-behind-waymo-and-google-glass-that-wants-to-reshape-your-life",
+    "publishedAt": "2025-09-12T00:00:00Z",
+    "type": "Analysis",
+    "companies": ["Waymo", "Google"],
+    "tags": ["google-x", "innovation", "technology"],
+    "excerpt": "A deep dive into Google's X lab, the moonshot factory responsible for breakthrough technologies including Waymo's autonomous driving system.",
+    "heroImage": "/placeholder.svg"
+  },
+  {
+    "id": "5",
+    "slug": "tesla-waymo-airport-competition",
+    "title": "Tesla and Waymo are gunning for a coveted airport contract",
+    "source": "AOL",
+    "url": "https://www.aol.com/news/tesla-waymo-gunning-coveted-airport-105301733.html",
+    "publishedAt": "2025-09-10T00:00:00Z",
+    "type": "Analysis",
+    "companies": ["Waymo", "Tesla"],
+    "tags": ["airport", "contract", "competition"],
+    "excerpt": "Major autonomous vehicle companies are competing for lucrative airport transportation contracts, signaling the maturation of the robotaxi market.",
+    "heroImage": "/placeholder.svg"
+  },
+  {
+    "id": "6",
+    "slug": "lyft-robotaxi-launch-gap",
+    "title": "Lyft's modest robotaxi launch highlights growing gap with Uber and Waymo",
+    "source": "TechCrunch",
+    "url": "https://techcrunch.com/2025/09/10/lyfts-modest-robotaxi-launch-highlights-growing-gap-with-uber-and-waymo/",
+    "publishedAt": "2025-09-10T00:00:00Z",
+    "type": "Announcement",
+    "companies": ["Lyft", "Uber", "Waymo"],
+    "tags": ["robotaxi", "competition", "market-share"],
+    "excerpt": "Lyft's conservative approach to robotaxi deployment contrasts sharply with the aggressive expansion strategies of competitors Uber and Waymo.",
+    "heroImage": "/placeholder.svg"
+  },
+  {
+    "id": "7",
+    "slug": "uber-momenta-munich-partnership",
+    "title": "Uber partners with Momenta to test L4 driverless cars in Munich",
+    "source": "The Verge",
+    "url": "https://www.theverge.com/news/772639/uber-momenta-l4-driverless-test-munich-robotaxi",
+    "publishedAt": "2025-09-09T00:00:00Z",
+    "type": "Partnership",
+    "companies": ["Uber", "Momenta"],
+    "tags": ["munich", "l4", "partnership", "international"],
+    "excerpt": "Uber's partnership with Chinese autonomous driving company Momenta brings Level 4 autonomous vehicles to European roads for the first time.",
+    "heroImage": "/placeholder.svg"
+  }
+]
