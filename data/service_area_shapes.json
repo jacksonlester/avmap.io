@@ -1,0 +1,64 @@
+{
+  "waymo-sf-v1": {
+    "id": "waymo-sf-v1",
+    "deploymentId": "waymo-sf",
+    "name": "San Francisco Initial Area",
+    "version": "1.0",
+    "effectiveDate": "2023-08-10",
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "name": "Waymo SF Service Area v1"
+          },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [-122.4194, 37.7749],
+                [-122.4094, 37.7849],
+                [-122.3994, 37.7749],
+                [-122.4094, 37.7649],
+                [-122.4194, 37.7749]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "notes": "Initial launch area covering downtown San Francisco"
+  },
+  "waymo-sf-v2": {
+    "id": "waymo-sf-v2",
+    "deploymentId": "waymo-sf",
+    "name": "San Francisco Expanded Area",
+    "version": "2.0",
+    "effectiveDate": "2024-03-15",
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "name": "Waymo SF Service Area v2"
+          },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [
+              [
+                [-122.4294, 37.7849],
+                [-122.3994, 37.7949],
+                [-122.3794, 37.7649],
+                [-122.4194, 37.7549],
+                [-122.4294, 37.7849]
+              ]
+            ]
+          }
+        }
+      ]
+    },
+    "notes": "Expanded area including Mission District and SOMA"
+  }
+}

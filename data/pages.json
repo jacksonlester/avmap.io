@@ -1,0 +1,10 @@
+{
+  "about": {
+    "id": "about",
+    "title": "About AV Map",
+    "slug": "about",
+    "content": "# About AV Map\n\nAV Map is a comprehensive visualization platform for autonomous vehicle deployments across the United States. Our mission is to provide clear, up-to-date information about where self-driving cars are operating and how the industry is evolving.\n\n## What We Track\n\n- **Active Deployments**: Current robotaxi and autonomous shuttle services\n- **Service Areas**: Geographic boundaries where AV services operate\n- **Timeline Events**: Launch dates, expansions, and regulatory milestones\n- **Industry News**: Latest developments in autonomous vehicle technology\n\n## Data Sources\n\nWe aggregate information from:\n- Company announcements and press releases\n- Regulatory filings and permits\n- News coverage and industry reports\n- Government transportation agencies\n\n## Our Commitment\n\nWe strive to maintain accuracy and timeliness in all our data. If you notice any errors or have updates to share, please contact us.\n\n*Last updated: September 2025*",
+    "lastModified": "2025-09-14T12:00:00Z",
+    "published": true
+  }
+}

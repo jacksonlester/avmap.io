@@ -1,0 +1,58 @@
+{
+  "waymo-sf": {
+    "id": "waymo-sf",
+    "name": "Waymo San Francisco",
+    "company": "Waymo",
+    "city": "San Francisco",
+    "state": "California",
+    "country": "United States",
+    "status": "active",
+    "launchDate": "2023-08-10",
+    "description": "Commercial robotaxi service in San Francisco",
+    "serviceType": "robotaxi",
+    "operatingHours": "24/7",
+    "website": "https://waymo.com/waymo-one/"
+  },
+  "waymo-phoenix": {
+    "id": "waymo-phoenix",
+    "name": "Waymo Phoenix",
+    "company": "Waymo",
+    "city": "Phoenix",
+    "state": "Arizona",
+    "country": "United States",
+    "status": "active",
+    "launchDate": "2020-10-08",
+    "description": "Fully autonomous robotaxi service in Phoenix metro area",
+    "serviceType": "robotaxi",
+    "operatingHours": "24/7",
+    "website": "https://waymo.com/waymo-one/"
+  },
+  "zoox-vegas": {
+    "id": "zoox-vegas",
+    "name": "Zoox Las Vegas",
+    "company": "Zoox",
+    "city": "Las Vegas",
+    "state": "Nevada",
+    "country": "United States",
+    "status": "planned",
+    "launchDate": "2024-11-15",
+    "description": "Employee robotaxi service in Las Vegas",
+    "serviceType": "robotaxi",
+    "operatingHours": "Business hours",
+    "website": "https://zoox.com/"
+  },
+  "may-mobility-atlanta": {
+    "id": "may-mobility-atlanta",
+    "name": "May Mobility Atlanta",
+    "company": "May Mobility",
+    "city": "Atlanta",
+    "state": "Georgia",
+    "country": "United States",
+    "status": "active",
+    "launchDate": "2025-09-10",
+    "description": "Autonomous shuttle service via Lyft partnership",
+    "serviceType": "shuttle",
+    "operatingHours": "6 AM - 10 PM",
+    "website": "https://maymobility.com/"
+  }
+}
