@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { 
   Users, 
   MapPin, 
@@ -17,9 +18,11 @@ import {
   Activity,
   AlertTriangle,
   LogOut,
-  Shield
+  Shield,
+  Menu
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface DashboardStats {
   deployments: number;
@@ -50,9 +53,11 @@ export function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [readOnly, setReadOnly] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const dataStore = new FileJsonStore();
 
   useEffect(() => {
@@ -156,7 +161,7 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-6 w-6 text-primary" />
@@ -164,16 +169,68 @@ export function AdminDashboard() {
           </div>
           
           <div className="flex items-center gap-2">
-            {readOnly && (
+            {readOnly && !isMobile && (
               <Badge variant="destructive" className="mr-2">
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 Read Only
               </Badge>
             )}
-            <Button variant="outline" size="sm" onClick={handleLogout}>
+            
+            {/* Desktop Logout */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleLogout}
+              className="hidden md:flex"
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
+
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="md:hidden"
+                >
+                  <Menu className="h-4 w-4" />
+                  <span className="sr-only">Toggle admin menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64">
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Admin Menu
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 mt-6">
+                  {readOnly && (
+                    <Badge variant="destructive" className="self-start">
+                      <AlertTriangle className="h-3 w-3 mr-1" />
+                      Read Only
+                    </Badge>
+                  )}
+                  
+                  <div className="border-t pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full justify-start"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
@@ -190,14 +247,29 @@ export function AdminDashboard() {
 
       <div className="container mx-auto p-4">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="deployments">Deployments</TabsTrigger>
-            <TabsTrigger value="events">Events</TabsTrigger>
-            <TabsTrigger value="shapes">Service Areas</TabsTrigger>
-            <TabsTrigger value="news">News</TabsTrigger>
-            <TabsTrigger value="pages">Pages</TabsTrigger>
-          </TabsList>
+          {/* Mobile Tab Navigation */}
+          {isMobile ? (
+            <div className="overflow-x-auto">
+              <TabsList className="inline-flex min-w-full">
+                <TabsTrigger value="overview" className="min-w-0 flex-1">Overview</TabsTrigger>
+                <TabsTrigger value="deployments" className="min-w-0 flex-1">Deploy</TabsTrigger>
+                <TabsTrigger value="events" className="min-w-0 flex-1">Events</TabsTrigger>
+                <TabsTrigger value="shapes" className="min-w-0 flex-1">Areas</TabsTrigger>
+                <TabsTrigger value="news" className="min-w-0 flex-1">News</TabsTrigger>
+                <TabsTrigger value="pages" className="min-w-0 flex-1">Pages</TabsTrigger>
+              </TabsList>
+            </div>
+          ) : (
+            /* Desktop Tab Navigation */
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="deployments">Deployments</TabsTrigger>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="shapes">Service Areas</TabsTrigger>
+              <TabsTrigger value="news">News</TabsTrigger>
+              <TabsTrigger value="pages">Pages</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="overview" className="space-y-6">
             {/* Stats Grid */}
