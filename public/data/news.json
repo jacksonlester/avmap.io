@@ -10,7 +10,7 @@
     "companies": ["Zoox", "Amazon"],
     "tags": ["robotaxi", "employees", "las-vegas"],
     "excerpt": "Amazon's autonomous vehicle unit Zoox announced it will begin offering robotaxi rides to employees in Las Vegas, marking a significant step toward commercial deployment.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-robotaxi-launch.jpg"
   },
   {
     "id": "2",
@@ -23,7 +23,7 @@
     "companies": ["Waymo"],
     "tags": ["seattle", "bellevue", "expansion"],
     "excerpt": "Waymo's autonomous vehicles have been spotted testing on roads around Seattle and Bellevue, suggesting potential expansion to the Pacific Northwest.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-autonomous-cars.jpg"
   },
   {
     "id": "3",
@@ -36,7 +36,7 @@
     "companies": ["Waymo", "Tesla", "Zoox"],
     "tags": ["airport", "fifa", "superbowl", "competition"],
     "excerpt": "As major sporting events approach, autonomous vehicle companies are positioning themselves for high-profile deployments at key transportation hubs.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-airport-transport.jpg"
   },
   {
     "id": "4",
@@ -49,7 +49,7 @@
     "companies": ["Waymo", "Google"],
     "tags": ["google-x", "innovation", "technology"],
     "excerpt": "A deep dive into Google's X lab, the moonshot factory responsible for breakthrough technologies including Waymo's autonomous driving system.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-tech-lab.jpg"
   },
   {
     "id": "5",
@@ -62,7 +62,7 @@
     "companies": ["Waymo", "Tesla"],
     "tags": ["airport", "contract", "competition"],
     "excerpt": "Major autonomous vehicle companies are competing for lucrative airport transportation contracts, signaling the maturation of the robotaxi market.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-airport-transport.jpg"
   },
   {
     "id": "6",
@@ -75,7 +75,7 @@
     "companies": ["Lyft", "Uber", "Waymo"],
     "tags": ["robotaxi", "competition", "market-share"],
     "excerpt": "Lyft's conservative approach to robotaxi deployment contrasts sharply with the aggressive expansion strategies of competitors Uber and Waymo.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-autonomous-cars.jpg"
   },
   {
     "id": "7",
@@ -88,6 +88,6 @@
     "companies": ["Uber", "Momenta"],
     "tags": ["munich", "l4", "partnership", "international"],
     "excerpt": "Uber's partnership with Chinese autonomous driving company Momenta brings Level 4 autonomous vehicles to European roads for the first time.",
-    "heroImage": "/placeholder.svg"
+    "heroImage": "/images/news-autonomous-cars.jpg"
   }
 ]
