@@ -233,36 +233,16 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
         <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
           <Card className="w-full max-w-md mx-4">
             <CardContent className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
+              <div className="space-y-4 text-center">
+                <div className="flex items-center justify-center gap-2">
                   <MapPinIcon className="h-5 w-5" />
-                  <h3 className="text-lg font-semibold">Enter Mapbox Token</h3>
+                  <h3 className="text-lg font-semibold">Map Configuration Required</h3>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Enter your Mapbox public token to load the map. You can get one at 
-                  <a href="https://mapbox.com" target="_blank" rel="noopener noreferrer" className="underline"> mapbox.com</a>. To avoid prompts, set the token in code and restrict it to your domain.
+                  The map requires a Mapbox token to load. Contact the administrator to configure the map service.
                 </p>
-                <div className="space-y-2">
-                  <Input
-                    type="password"
-                    placeholder="pk.eyJ1IjoieW91cm5hbWUuLi4"
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && token.trim()) {
-                        try { localStorage.setItem('mapbox_token', token.trim()); setToken(token.trim()); } catch (error) { console.warn('Failed to save token:', error); }
-                      }
-                    }}
-                  />
-                  <Button 
-                    className="w-full" 
-                    onClick={() => { 
-                      try { localStorage.setItem('mapbox_token', token.trim()); setToken(token.trim()); } catch (error) { console.warn('Failed to save token:', error); }
-                    }}
-                    disabled={!token.trim()}
-                  >
-                    Save & Load Map
-                  </Button>
+                <div className="h-32 bg-muted rounded-lg flex items-center justify-center">
+                  <p className="text-muted-foreground text-sm">Map preview unavailable</p>
                 </div>
               </div>
             </CardContent>
