@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { MapPinIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { OverlapPicker } from './OverlapPicker';
+import { OverlapBottomSheet } from './OverlapBottomSheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // IMPORTANT: Set your Mapbox public token here to avoid user input.
 // Protect it by restricting allowed URLs in your Mapbox dashboard.
@@ -23,6 +26,12 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loadedAreas, setLoadedAreas] = useState<Set<string>>(new Set());
+  const [overlapPicker, setOverlapPicker] = useState<{
+    areas: ServiceArea[];
+    position: { x: number; y: number };
+  } | null>(null);
+  const [hoveredAreaId, setHoveredAreaId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   const [token, setToken] = useState<string>(() => {
     try {
       if (HARDCODED_MAPBOX_PUBLIC_TOKEN && HARDCODED_MAPBOX_PUBLIC_TOKEN.startsWith('pk.')) {
@@ -141,23 +150,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
           currentMap.setPaintProperty(`${area.id}-fill`, 'fill-opacity', 0.3);
         });
 
-        // Add click handler
-        currentMap.on('click', `${area.id}-fill`, (e) => {
-          if (e.features?.[0]) {
-            // Fit bounds to the clicked area
-            const bounds = new mapboxgl.LngLatBounds();
-            const geometry = e.features[0].geometry as any;
-            
-            if (geometry.type === 'Polygon') {
-              geometry.coordinates[0].forEach((coord: [number, number]) => {
-                bounds.extend(coord);
-              });
-            }
-            
-            currentMap.fitBounds(bounds, { padding: 50 });
-            onServiceAreaClick(area);
-          }
-        });
+        // Remove individual click handlers - we'll handle clicks globally below
 
         // Mark as loaded
         setLoadedAreas(prev => new Set([...prev, area.id]));
@@ -166,7 +159,67 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       }
     });
 
-  }, [serviceAreas, loadedAreas, onServiceAreaClick]);
+    // Add global click handler for overlap detection
+    currentMap.on('click', (e) => {
+      // Query all visible service area features at the click point
+      const features = currentMap.queryRenderedFeatures(e.point, {
+        layers: serviceAreas
+          .filter(area => loadedAreas.has(area.id))
+          .map(area => `${area.id}-fill`)
+      });
+
+      if (features.length === 0) {
+        setOverlapPicker(null);
+        return;
+      }
+
+      if (features.length === 1) {
+        // Single area - behave normally
+        const featureId = features[0].source as string;
+        const clickedArea = serviceAreas.find(area => area.id === featureId);
+        
+        if (clickedArea) {
+          const bounds = new mapboxgl.LngLatBounds();
+          const geometry = features[0].geometry as any;
+          
+          if (geometry.type === 'Polygon') {
+            geometry.coordinates[0].forEach((coord: [number, number]) => {
+              bounds.extend(coord);
+            });
+          }
+          
+          currentMap.fitBounds(bounds, { padding: 50 });
+          onServiceAreaClick(clickedArea);
+        }
+        setOverlapPicker(null);
+      } else if (features.length <= 5) {
+        // Multiple areas - show overlap picker
+        const overlappingAreas = features
+          .map(feature => serviceAreas.find(area => area.id === feature.source))
+          .filter((area): area is ServiceArea => area !== undefined);
+
+        if (isMobile) {
+          setOverlapPicker({ areas: overlappingAreas, position: { x: 0, y: 0 } });
+        } else {
+          const rect = mapContainer.current?.getBoundingClientRect();
+          if (rect) {
+            setOverlapPicker({
+              areas: overlappingAreas,
+              position: {
+                x: e.point.x,
+                y: e.point.y - 10
+              }
+            });
+          }
+        }
+      } else {
+        // Too many overlapping areas - show toast
+        toast.error('Too many overlapping service areas. Try zooming in for better precision.');
+        setOverlapPicker(null);
+      }
+    });
+
+  }, [serviceAreas, loadedAreas, onServiceAreaClick, isMobile]);
 
   // Update visibility based on filters
   useEffect(() => {
@@ -227,6 +280,72 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     return () => observer.disconnect();
   }, [loadedAreas]);
 
+  // Handle overlap picker area selection
+  const handleOverlapAreaSelect = (area: ServiceArea) => {
+    if (!map.current) return;
+
+    // Fit bounds to the selected area
+    const source = map.current.getSource(area.id) as mapboxgl.GeoJSONSource;
+    if (source) {
+      const bounds = new mapboxgl.LngLatBounds();
+      // Get the source data to calculate bounds
+      fetch(area.geojsonPath)
+        .then(response => response.json())
+        .then(geojson => {
+          if (geojson.features?.[0]?.geometry?.type === 'Polygon') {
+            geojson.features[0].geometry.coordinates[0].forEach((coord: [number, number]) => {
+              bounds.extend(coord);
+            });
+            map.current?.fitBounds(bounds, { padding: 50 });
+          }
+        });
+    }
+
+    setOverlapPicker(null);
+    onServiceAreaClick(area);
+  };
+
+  // Handle area hover for highlighting
+  const handleOverlapAreaHover = (area: ServiceArea | null) => {
+    if (!map.current) return;
+
+    // Reset all areas to normal state
+    serviceAreas.forEach(serviceArea => {
+      if (loadedAreas.has(serviceArea.id)) {
+        map.current?.setPaintProperty(`${serviceArea.id}-line`, 'line-width', 2);
+        map.current?.setPaintProperty(`${serviceArea.id}-fill`, 'fill-opacity', 0.3);
+      }
+    });
+
+    // Highlight the hovered area
+    if (area && loadedAreas.has(area.id)) {
+      map.current.setPaintProperty(`${area.id}-line`, 'line-width', 3);
+      map.current.setPaintProperty(`${area.id}-fill`, 'fill-opacity', 0.5);
+    }
+
+    setHoveredAreaId(area?.id || null);
+  };
+
+  // Close overlap picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!overlapPicker || !mapContainer.current) return;
+
+      const rect = mapContainer.current.getBoundingClientRect();
+      const isOutsideMap = e.clientX < rect.left || e.clientX > rect.right || 
+                          e.clientY < rect.top || e.clientY > rect.bottom;
+      
+      if (isOutsideMap) {
+        setOverlapPicker(null);
+      }
+    };
+
+    if (overlapPicker && !isMobile) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [overlapPicker, isMobile]);
+
   if (!token) {
     return (
       <div className={`relative ${className}`}>
@@ -254,7 +373,27 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
   return (
     <div className={className}>
-      <div ref={mapContainer} className="w-full h-full" />
+      <div ref={mapContainer} className="w-full h-full relative">
+        {/* Desktop overlap picker */}
+        {overlapPicker && !isMobile && (
+          <OverlapPicker
+            overlappingAreas={overlapPicker.areas}
+            position={overlapPicker.position}
+            onAreaSelect={handleOverlapAreaSelect}
+            onAreaHover={handleOverlapAreaHover}
+          />
+        )}
+      </div>
+      
+      {/* Mobile overlap picker */}
+      {isMobile && (
+        <OverlapBottomSheet
+          overlappingAreas={overlapPicker?.areas || []}
+          isOpen={!!overlapPicker}
+          onAreaSelect={handleOverlapAreaSelect}
+          onClose={() => setOverlapPicker(null)}
+        />
+      )}
     </div>
   );
 }
