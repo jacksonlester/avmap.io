@@ -6,7 +6,6 @@ import { Filters } from '@/components/Filters';
 import { BottomSheet } from '@/components/BottomSheet';
 import { ServiceArea, ServiceAreaData, MapFilters } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Index = () => {
@@ -78,7 +77,7 @@ const Index = () => {
       
       <main className="w-full h-[calc(100vh-56px)]">
         <div id="map-shell" className="flex w-full h-full">
-          {/* Desktop Sidebar */}
+          {/* LEFT: filters sidebar */}
           {!isMobile && (
             <aside
               id="filters-panel"
@@ -90,31 +89,30 @@ const Index = () => {
                 relative
               "
             >
-              <div className="pt-6 px-4 h-full">
-                <Filters 
-                  filters={filters}
-                  onFiltersChange={handleFiltersChange}
-                />
-              </div>
-              
-              {/* Toggle button */}
-              <Button
-                variant="outline"
-                size="sm"
+              {/* Sidebar toggle button */}
+              <button
                 onClick={toggleSidebar}
-                className="absolute top-1/2 -right-4 transform -translate-y-1/2 z-10 
-                          bg-background border border-border rounded-full p-2 shadow-md 
-                          hover:shadow-lg transition-shadow"
+                className="absolute top-1/2 -right-3 transform -translate-y-1/2 z-10 bg-background border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow"
               >
-                {sidebarCollapsed ? 
-                  <ChevronRight className="h-4 w-4" /> : 
+                {sidebarCollapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
                   <ChevronLeft className="h-4 w-4" />
-                }
-              </Button>
+                )}
+              </button>
+              
+              {!sidebarCollapsed && (
+                <div className="pt-20 pr-2 h-full">
+                  <Filters 
+                    filters={filters} 
+                    onFiltersChange={handleFiltersChange} 
+                  />
+                </div>
+              )}
             </aside>
           )}
 
-          {/* Map area */}
+          {/* RIGHT: map column */}
           <section className="relative flex-1 min-w-0">
             <div id="map-container" className="absolute inset-0">
               <Map

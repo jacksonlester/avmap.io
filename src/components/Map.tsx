@@ -92,15 +92,15 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     };
     window.addEventListener('resize', handleWindowResize);
     
-    // Listen for sidebar transition end to resize map
+    // Listen for sidebar transitions
     const filtersPanel = document.getElementById('filters-panel');
-    const handleSidebarTransition = (e: TransitionEvent) => {
+    const handleTransitionEnd = (e: TransitionEvent) => {
       if (e.propertyName === 'width' && map.current) {
         map.current.resize();
       }
     };
     if (filtersPanel) {
-      filtersPanel.addEventListener('transitionend', handleSidebarTransition);
+      filtersPanel.addEventListener('transitionend', handleTransitionEnd);
     }
     
     map.current.on('load', () => {
@@ -111,8 +111,9 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleWindowResize);
+      const filtersPanel = document.getElementById('filters-panel');
       if (filtersPanel) {
-        filtersPanel.removeEventListener('transitionend', handleSidebarTransition);
+        filtersPanel.removeEventListener('transitionend', handleTransitionEnd);
       }
       if (map.current) {
         map.current.remove();
@@ -384,8 +385,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
 
   return (
-    <div className={className}>
-      <div ref={mapContainer} className="w-full h-full relative">
+    <div ref={mapContainer} className="w-full h-full relative">
         {/* Desktop overlap picker */}
         {overlapPicker && !isMobile && (
           <OverlapPicker
@@ -395,7 +395,6 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
             onAreaHover={handleOverlapAreaHover}
           />
         )}
-      </div>
       
       {/* Mobile overlap picker */}
       {isMobile && (
