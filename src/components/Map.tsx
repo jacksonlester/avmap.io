@@ -92,6 +92,11 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     };
     window.addEventListener('resize', handleWindowResize);
     
+    const handleCustomResize = () => {
+      if (map.current) map.current.resize();
+    };
+    window.addEventListener('avmap:container-resize', handleCustomResize);
+    
     map.current.on('load', () => {
       if (map.current) map.current.resize();
     });
@@ -100,6 +105,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleWindowResize);
+      window.removeEventListener('avmap:container-resize', handleCustomResize);
       if (map.current) {
         map.current.remove();
         map.current = null;
