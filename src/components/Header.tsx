@@ -31,7 +31,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
 
   return (
     <header className="fixed top-0 z-50 w-full border-b bg-background">
-      <div className="container flex h-14 items-center justify-between px-4 max-w-full overflow-hidden">
+      <div className="container flex h-14 items-center justify-between px-4 md:px-6 lg:px-8">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center space-x-2">
             <div className="h-6 w-6 rounded bg-primary"></div>
@@ -127,7 +127,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
             variant="outline"
             size="sm"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="hidden md:flex mr-4"
+            className="hidden md:flex"
           >
             <SunIcon className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <MoonIcon className="h-4 w-4 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
