@@ -168,7 +168,7 @@ const Index = () => {
 
           {/* RIGHT: map column */}
           <section id="map-col" className="relative min-w-0">
-            <div id="map-container" className="absolute inset-0 overflow-visible">
+            <div id="map-container" className="absolute inset-0">
               <Map
                 serviceAreas={serviceAreas}
                 filters={filters}
