@@ -6,7 +6,7 @@ import { Filters } from '@/components/Filters';
 import { BottomSheet } from '@/components/BottomSheet';
 import { ServiceArea, ServiceAreaData, MapFilters } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,57 +75,33 @@ const Index = () => {
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0");
+    // Tell map to resize after the width transition
+    const t = setTimeout(() => window.dispatchEvent(new Event("avmap:container-resize")), 320);
+    return () => clearTimeout(t);
   }, [collapsed]);
 
-  // After width transition, tell the map to resize
-  useEffect(() => {
-    const panel = document.getElementById("filters-panel");
-    if (!panel) return;
-    const onEnd = (e: TransitionEvent) => {
-      if (e.propertyName === "width") {
-        window.dispatchEvent(new Event("avmap:container-resize"));
-      }
-    };
-    panel.addEventListener("transitionend", onEnd);
-    return () => panel.removeEventListener("transitionend", onEnd);
-  }, []);
+  // Sidebar width variable
+  const sidebarWidth = collapsed ? "0px" : "20rem"; // 320px
 
   return (
     <div className="min-h-screen w-screen bg-background text-foreground">
+      {/* Fixed header */}
       <Header onToggleFilters={toggleFilters} isMobile={isMobile} showFilters={showFilters} />
+      {/* Main content below header */}
       <main id="main-shell" className="w-screen max-w-none h-[calc(100vh-56px)]">
-        <div id="map-shell" className="relative flex w-full h-full">
-          {/* LEFT: Filters sidebar, pinned to the left edge */}
+        <div
+          id="map-shell"
+          className="relative h-full w-full"
+          style={{ display: "grid", gridTemplateColumns: `${sidebarWidth} 1fr` }}
+        >
+          {/* LEFT: filters, flush to left edge */}
           {!isMobile && (
             <aside
               id="filters-panel"
-              data-collapsed={collapsed}
-              className="
-                shrink-0 h-full overflow-auto bg-[#0b1020] text-white
-                transition-[width] duration-300 ease-in-out
-                w-80
-                data-[collapsed=true]:w-0 data-[collapsed=true]:overflow-hidden
-              "
+              className="h-full overflow-auto bg-[#0b1020] text-white"
               aria-label="Filters"
             >
-              {/* Sidebar header with collapse button (visible when expanded) */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span className="text-sm font-medium">Filters</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCollapsed(true)}
-                  className="inline-flex items-center justify-center rounded-md border border-white/10 px-2 py-1 text-xs hover:bg-white/10"
-                  aria-label="Collapse filters"
-                  title="Collapse filters"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Filters content */}
+              {/* internal padding only for contents */}
               <div className="p-3">
                 <Filters
                   filters={filters}
@@ -137,29 +113,8 @@ const Index = () => {
             </aside>
           )}
 
-          {/* PERSISTENT TOGGLE when collapsed */}
-          {!isMobile && (
-            <button
-              id="filters-toggle"
-              type="button"
-              onClick={() => setCollapsed(false)}
-              className="
-                absolute left-2 top-1/2 -translate-y-1/2 z-40
-                hidden data-[collapsed=true]:flex
-                items-center gap-1 rounded-md border border-white/10 bg-[#0b1020]/90
-                px-2 py-1 text-xs text-white hover:bg-[#0b1020]
-              "
-              data-collapsed={collapsed}
-              aria-label="Expand filters"
-              title="Expand filters"
-            >
-              <ChevronRight className="h-4 w-4" />
-              Filters
-            </button>
-          )}
-
-          {/* RIGHT: Map column fills all remaining width */}
-          <section id="map-col" className="relative flex-1 min-w-0">
+          {/* RIGHT: map column */}
+          <section id="map-col" className="relative min-w-0">
             <div id="map-container" className="absolute inset-0">
               <Map
                 serviceAreas={serviceAreas}
@@ -169,6 +124,30 @@ const Index = () => {
               />
             </div>
           </section>
+
+          {/* BOUNDARY TOGGLE HANDLE — always visible, between sidebar and map */}
+          {!isMobile && (
+            <button
+              id="sidebar-handle"
+              type="button"
+              onClick={() => setCollapsed(v => !v)}
+              title={collapsed ? "Show filters" : "Hide filters"}
+              className="
+                absolute z-50 top-1/2 -translate-y-1/2
+                flex items-center justify-center
+                h-10 w-6 rounded-md border border-white/15 bg-black/40 backdrop-blur
+                text-white hover:bg-black/60
+              "
+              style={{
+                left: sidebarWidth,        // sits on the boundary; moves to 0 when collapsed
+                marginLeft: "-12px"        // half the handle width so it straddles the edge
+              }}
+              aria-controls="filters-panel"
+              aria-expanded={!collapsed}
+            >
+              {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+            </button>
+          )}
 
           {/* Mobile Filters Overlay */}
           {isMobile && showFilters && (
