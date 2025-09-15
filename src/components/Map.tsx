@@ -7,11 +7,8 @@ import { OverlapPicker } from './OverlapPicker';
 import { OverlapBottomSheet } from './OverlapBottomSheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
-if (!MAPBOX_TOKEN) {
-  throw new Error('Missing VITE_MAPBOX_PUBLIC_TOKEN in .env.local');
-}
-mapboxgl.accessToken = MAPBOX_TOKEN;
+// Use a restricted PUBLIC token (scopes: styles:read, tilesets:read, fonts:read; URL restricted to this domain)
+mapboxgl.accessToken = "pk.eyJ1IjoiamFja3Nvbmxlc3RlciIsImEiOiJjbWZoajk3eTAwY3dqMnJwdG5mcGF6bTl0In0.gWVBM8D8fd0SrAq1hXH1Fg";
 
 interface MapProps {
   serviceAreas: ServiceArea[];
@@ -40,9 +37,9 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-116.5, 35.0], // Centered on western US
       zoom: 5.5,
-      minZoom: 3,
-      maxZoom: 15,
-      maxBounds: [[-180, 20], [-50, 70]], // Limit to North America
+      minZoom: 10,
+      maxZoom: 18,
+      maxBounds: [[-123.0, 37.2], [-122.0, 38.2]], // San Francisco Bay Area bounds
       projection: 'mercator' as any
     });
 
