@@ -11,7 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 mapboxgl.accessToken = "pk.eyJ1IjoiamFja3Nvbmxlc3RlciIsImEiOiJjbWZoajk3eTAwY3dqMnJwdG5mcGF6bTl0In0.gWVBM8D8fd0SrAq1hXH1Fg";
 
 // Optional service area bounds (Bay Area example)
-const SERVICE_BOUNDS: [number, number, number, number] = [-123.0, 37.2, -122.0, 38.2];
+const SERVICE_BOUNDS: [number, number, number, number] = [-123.4, 36.8, -121.6, 38.6];
 
 interface MapProps {
   serviceAreas: ServiceArea[];
