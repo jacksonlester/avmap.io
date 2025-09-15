@@ -69,10 +69,10 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex flex-col h-screen bg-background w-full">
+      <div className="flex flex-col h-screen bg-background w-full overflow-hidden">
         <Header onToggleFilters={toggleFilters} isMobile={isMobile} showFilters={showFilters} />
         
-        <div className="flex flex-1 relative overflow-hidden w-full">
+        <div className="flex flex-1 relative w-full h-0">
           {/* Desktop Sidebar */}
           {!isMobile && (
             <AppSidebar 

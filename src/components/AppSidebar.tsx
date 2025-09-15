@@ -23,7 +23,9 @@ export function AppSidebar({ filters, onFiltersChange }: AppSidebarProps) {
       <Sidebar variant="sidebar" collapsible="icon" className="border-r-0">
         <SidebarContent className="pt-20 pr-2 bg-background">
           <SidebarGroup>
-            <SidebarGroupLabel className="pr-2 bg-background border-b pb-2 mb-4">Filters</SidebarGroupLabel>
+            <div className="pr-2 pb-2 mb-4">
+              <h3 className="text-sm font-medium">Filters</h3>
+            </div>
             <SidebarGroupContent className="pr-2">
               {state !== "collapsed" && (
                 <Filters 

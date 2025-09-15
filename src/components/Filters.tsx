@@ -32,17 +32,17 @@ export function Filters({ filters, onFiltersChange, onClose, isMobile }: Filters
   };
 
   return (
-    <Card className={`${isMobile ? 'border-0 shadow-lg' : ''}`}>
+    <div className={`${isMobile ? 'bg-background border rounded-lg shadow-lg p-4' : ''}`}>
       {isMobile && (
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg">Filters</CardTitle>
+        <div className="flex flex-row items-center justify-between mb-4">
+          <h3 className="text-sm font-medium">Filters</h3>
           <Button variant="ghost" size="sm" onClick={onClose}>
             <XIcon className="h-4 w-4" />
           </Button>
-        </CardHeader>
+        </div>
       )}
       
-      <CardContent className="space-y-6">
+      <div className="space-y-6">
         <div>
           <h3 className="text-sm font-medium mb-3">Companies</h3>
           <div className="space-y-2">
@@ -92,7 +92,7 @@ export function Filters({ filters, onFiltersChange, onClose, isMobile }: Filters
             ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
