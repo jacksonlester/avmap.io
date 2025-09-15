@@ -127,13 +127,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-/* Prevent page scroll caused by sidebar gap under sticky header (h-14 = 56px) */
-.group\/sidebar-wrapper > div[data-variant='sidebar'] > div:first-child {
-  height: calc(100svh - 56px) !important;
-  margin-top: 56px;
-}
-.group\/sidebar-wrapper > div[data-variant='sidebar'] > div.fixed {
-  top: 56px !important;
-  height: calc(100svh - 56px) !important;
-}

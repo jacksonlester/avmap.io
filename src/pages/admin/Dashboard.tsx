@@ -362,9 +362,7 @@ export function AdminDashboard() {
                 <CardTitle>Deployments</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  Manage AV operator deployments, track service areas and availability across rider apps.
-                </p>
+                <p className="text-muted-foreground">Deployment management coming soon...</p>
               </CardContent>
             </Card>
           </TabsContent>
