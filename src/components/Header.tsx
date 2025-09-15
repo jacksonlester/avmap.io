@@ -30,8 +30,8 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
   };
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b bg-background">
-      <div className="container flex h-14 items-center justify-between px-4">
+    <header className="fixed top-0 z-50 w-full max-w-full border-b bg-background">
+      <div className="w-full flex h-14 items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center space-x-2">
             <div className="h-6 w-6 rounded bg-primary"></div>
