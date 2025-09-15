@@ -2,18 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { ServiceArea, MapFilters, COMPANY_COLORS } from '@/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { MapPinIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { OverlapPicker } from './OverlapPicker';
 import { OverlapBottomSheet } from './OverlapBottomSheet';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// IMPORTANT: Set your Mapbox public token here to avoid user input.
-// Protect it by restricting allowed URLs in your Mapbox dashboard.
-const HARDCODED_MAPBOX_PUBLIC_TOKEN: string = '';
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+if (!MAPBOX_TOKEN) {
+  throw new Error('Missing VITE_MAPBOX_PUBLIC_TOKEN in .env.local');
+}
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 interface MapProps {
   serviceAreas: ServiceArea[];
@@ -32,29 +30,19 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
   } | null>(null);
   const [hoveredAreaId, setHoveredAreaId] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const [token, setToken] = useState<string>(() => {
-    try {
-      if (HARDCODED_MAPBOX_PUBLIC_TOKEN && HARDCODED_MAPBOX_PUBLIC_TOKEN.startsWith('pk.')) {
-        return HARDCODED_MAPBOX_PUBLIC_TOKEN;
-      }
-      const saved = localStorage.getItem('mapbox_token');
-      return saved || '';
-    } catch {
-      return HARDCODED_MAPBOX_PUBLIC_TOKEN || '';
-    }
-  });
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current || !token) return;
-
-    mapboxgl.accessToken = token;
+    if (!mapContainer.current || map.current) return;
     
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-116.5, 35.0], // Centered on western US
       zoom: 5.5,
+      minZoom: 3,
+      maxZoom: 15,
+      maxBounds: [[-180, 20], [-50, 70]], // Limit to North America
       projection: 'mercator' as any
     });
 
@@ -83,7 +71,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
         map.current = null;
       }
     };
-  }, [token]);
+  }, []);
 
   // Load all service areas once when map is ready
   useEffect(() => {
@@ -346,30 +334,6 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     }
   }, [overlapPicker, isMobile]);
 
-  if (!token) {
-    return (
-      <div className={`relative ${className}`}>
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
-          <Card className="w-full max-w-md mx-4">
-            <CardContent className="p-6">
-              <div className="space-y-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <MapPinIcon className="h-5 w-5" />
-                  <h3 className="text-lg font-semibold">Map Configuration Required</h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  The map requires a Mapbox token to load. Contact the administrator to configure the map service.
-                </p>
-                <div className="h-32 bg-muted rounded-lg flex items-center justify-center">
-                  <p className="text-muted-foreground text-sm">Map preview unavailable</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className={className}>
