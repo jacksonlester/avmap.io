@@ -3,7 +3,7 @@ export interface AuditEntry {
   actor: string;
   entity: string;
   entityId: string;
-  action: 'create' | 'update' | 'delete' | 'restore' | 'login' | 'logout';
+  action: 'create' | 'update' | 'delete' | 'restore' | 'login' | 'logout' | 'rebuild';
   message: string;
   diff?: any;
   ip?: string;
