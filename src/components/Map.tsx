@@ -10,6 +10,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 // Use a restricted PUBLIC token (scopes: styles:read, tilesets:read, fonts:read; URL restricted to this domain)
 mapboxgl.accessToken = "pk.eyJ1IjoiamFja3Nvbmxlc3RlciIsImEiOiJjbWZoajk3eTAwY3dqMnJwdG5mcGF6bTl0In0.gWVBM8D8fd0SrAq1hXH1Fg";
 
+// Optional service area bounds (Bay Area example)
+const SERVICE_BOUNDS: [number, number, number, number] = [-123.0, 37.2, -122.0, 38.2];
+
 interface MapProps {
   serviceAreas: ServiceArea[];
   filters: MapFilters;
@@ -28,6 +31,13 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
   const [hoveredAreaId, setHoveredAreaId] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
+  // Helper function to toggle service area bounds lock
+  const setServiceAreaLock = (on: boolean) => {
+    if (map.current) {
+      map.current.setMaxBounds(on ? SERVICE_BOUNDS : null);
+    }
+  };
+
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -35,13 +45,22 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center: [-116.5, 35.0], // Centered on western US
-      zoom: 5.5,
-      minZoom: 10,
+      center: [-122.41, 37.77], // San Francisco
+      zoom: 3,
+      minZoom: 0,
       maxZoom: 18,
-      maxBounds: [[-123.0, 37.2], [-122.0, 38.2]], // San Francisco Bay Area bounds
       projection: 'mercator' as any
     });
+
+    // Remove any bounds restrictions by default
+    map.current.setMaxBounds(null);
+
+    // Ensure all interactions are enabled
+    map.current.scrollZoom.enable();
+    map.current.boxZoom.enable();
+    map.current.keyboard.enable();
+    map.current.dragPan.enable();
+    map.current.touchZoomRotate.enable();
 
     // Add navigation controls
     map.current.addControl(
