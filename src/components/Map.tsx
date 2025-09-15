@@ -98,6 +98,36 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     window.addEventListener('avmap:container-resize', handleCustomResize);
     
     map.current.on('load', () => {
+      // --- initial extent: SF, LA, Vegas, Phoenix (and Austin on wide screens) ---
+      const showAustin = window.innerWidth >= 1600; // tweak threshold if you like
+
+      // helper to build bounds from points with a little padding
+      function boundsFrom(points: [number, number][]) {
+        const b = new mapboxgl.LngLatBounds(points[0], points[0]);
+        for (const p of points) b.extend(p);
+        return b;
+      }
+
+      // key city coordinates [lng, lat]
+      const SF      = [-122.4194, 37.7749] as [number, number];
+      const LA      = [-118.2437, 34.0522] as [number, number];
+      const VEGAS   = [-115.1398, 36.1699] as [number, number];
+      const PHOENIX = [-112.0740, 33.4484] as [number, number];
+      const AUSTIN  = [-97.7431,  30.2672] as [number, number];
+
+      const pts = showAustin ? [SF, LA, VEGAS, PHOENIX, AUSTIN]
+                             : [SF, LA, VEGAS, PHOENIX];
+
+      const INITIAL_BOUNDS = boundsFrom(pts);
+
+      map.current?.fitBounds(INITIAL_BOUNDS, {
+        padding: { top: 72, right: 24, bottom: 24, left: 24 }, // keep UI off edges
+        linear: true,
+        duration: 0
+      });
+
+      // IMPORTANT: do this only once; do not re-apply on resize so user pans freely.
+      
       if (map.current) map.current.resize();
     });
 
