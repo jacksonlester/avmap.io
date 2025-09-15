@@ -30,16 +30,16 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
   };
 
   return (
-    <header className="fixed top-0 z-50 w-full max-w-full border-b bg-background">
-      <div className="w-full flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
+    <header className="fixed top-0 inset-x-0 z-50 border-b bg-background">
+      <div className="w-full box-border px-4 h-14 flex items-center justify-between">
+        <div className="flex items-center gap-6 shrink-0">
           <Link to="/" className="flex items-center space-x-2">
             <div className="h-6 w-6 rounded bg-primary"></div>
             <span className="font-bold text-lg">AV Map</span>
           </Link>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium shrink-0">
             <Link to="/companies" className="text-foreground/60 hover:text-foreground transition-colors">
               Companies
             </Link>
@@ -55,7 +55,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {/* Mobile Filter Toggle - only show on map page */}
           {isMobile && location.pathname === "/" && (
             <Button 
@@ -109,7 +109,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
                     variant="outline"
                     size="sm"
                     onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                    className="w-full justify-start"
+                    className="relative w-full justify-start"
                   >
                     <SunIcon className="h-4 w-4 mr-2 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                     <MoonIcon className="h-4 w-4 mr-2 absolute ml-2 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -127,7 +127,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
             variant="outline"
             size="sm"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="hidden md:flex"
+            className="relative hidden md:flex"
           >
             <SunIcon className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <MoonIcon className="h-4 w-4 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
