@@ -34,7 +34,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
       <div className="w-full box-border px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-6 shrink-0">
           <Link to="/" className="flex items-center space-x-2">
-            <div className="h-6 w-6 rounded bg-primary"></div>
+            <img src="/logo.png" alt="AV Map Logo" className="h-6 w-6" />
             <span className="font-bold text-lg">AV Map</span>
           </Link>
           
