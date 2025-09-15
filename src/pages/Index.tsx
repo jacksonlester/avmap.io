@@ -126,6 +126,12 @@ const Index = () => {
     }
   }, [collapsed]);
 
+  // Add page-scoped no-scroll effect
+  useEffect(() => {
+    document.body.classList.add("no-scroll");
+    return () => document.body.classList.remove("no-scroll");
+  }, []);
+
   // Sidebar width variable
   const sidebarWidth = collapsed ? "0px" : "20rem"; // 320px
 
@@ -168,7 +174,7 @@ const Index = () => {
 
           {/* RIGHT: map column */}
           <section id="map-col" className="relative min-w-0">
-            <div id="map-container" className="absolute inset-0">
+            <div id="map-container" className="absolute inset-0 overflow-hidden">
               <Map
                 serviceAreas={serviceAreas}
                 filters={filters}

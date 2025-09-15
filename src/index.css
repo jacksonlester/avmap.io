@@ -128,8 +128,8 @@
     width: 100%;
   }
   
-  html, body {
-    overflow: hidden;              /* page itself doesn't scroll */
+  body.no-scroll {
+    overflow: hidden;              /* only for map page */
   }
   
   #root {
