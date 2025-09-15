@@ -349,7 +349,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
   if (!token) {
     return (
       <div className={`relative ${className}`}>
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/50">
+        <div className="fixed left-0 right-0 top-14 bottom-0 flex items-center justify-center bg-muted/50">
           <Card className="w-full max-w-md mx-4">
             <CardContent className="p-6">
               <div className="space-y-4 text-center">
