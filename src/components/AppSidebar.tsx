@@ -36,8 +36,8 @@ export function AppSidebar({ filters, onFiltersChange }: AppSidebarProps) {
         </SidebarContent>
       </Sidebar>
       
-      {/* Trigger button on the right edge */}
-      <div className="absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
+      {/* Trigger button on the sidebar edge */}
+      <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 z-10">
         <SidebarTrigger className="bg-background border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow" />
       </div>
     </div>
