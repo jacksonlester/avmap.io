@@ -127,7 +127,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
             variant="outline"
             size="sm"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="hidden md:flex"
+            className="hidden md:flex mr-4"
           >
             <SunIcon className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <MoonIcon className="h-4 w-4 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
