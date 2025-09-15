@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Map } from '@/components/Map';
@@ -80,18 +80,51 @@ const Index = () => {
     return () => clearTimeout(t);
   }, [collapsed]);
 
-  // Compute header height and set CSS variable
-  useEffect(() => {
-    function setHeaderVar() {
+  // PART 1: AUDIT - Log layout measurements
+  useLayoutEffect(() => {
+    const h = document.getElementById('app-header');
+    const m = document.getElementById('main-shell');
+    const s = document.getElementById('filters-panel');
+    const headerH = h?.getBoundingClientRect().height ?? 0;
+    const sidebarStyle = s ? getComputedStyle(s) : null;
+    
+    console.log('[AUDIT] headerH', headerH,
+      'main.paddingTop', m ? getComputedStyle(m).paddingTop : null,
+      'main.height', m ? getComputedStyle(m).height : null,
+      'sidebar.top', s?.getBoundingClientRect().top,
+      'sidebar.position', sidebarStyle?.position,
+      'sidebar.hasFixed?', sidebarStyle?.position === 'fixed',
+      'sidebar.hasTop0?', sidebarStyle?.top === '0px',
+      'sidebar.hasInsetY0?', s?.classList.contains('inset-y-0')
+    );
+  }, []);
+
+  // PART 2: SINGLE SOURCE OF TRUTH FOR HEADER HEIGHT
+  useLayoutEffect(() => {
+    function syncHeaderHeight() {
       const h = document.getElementById('app-header')?.offsetHeight ?? 56;
       document.documentElement.style.setProperty('--header-h', `${h}px`);
-      // also tell Map to resize after layout shift
       window.dispatchEvent(new Event('avmap:container-resize'));
     }
-    setHeaderVar();
-    window.addEventListener('resize', setHeaderVar);
-    return () => window.removeEventListener('resize', setHeaderVar);
+    syncHeaderHeight();
+    window.addEventListener('resize', syncHeaderHeight);
+    return () => window.removeEventListener('resize', syncHeaderHeight);
   }, []);
+
+  // PART 6: ASSERTIONS TO CATCH REGRESSIONS
+  useLayoutEffect(() => {
+    const h = document.getElementById('app-header');
+    const s = document.getElementById('filters-panel');
+    if (h && s) {
+      const headerBottom = h.getBoundingClientRect().bottom;
+      const sidebarTop = s.getBoundingClientRect().top;
+      if (sidebarTop < headerBottom - 1) {
+        console.warn('[ASSERT] Sidebar is under the header. Ensure #filters-panel is not fixed and main has paddingTop var(--header-h).');
+      } else {
+        console.log('[ASSERT] ✓ Sidebar correctly positioned below header');
+      }
+    }
+  }, [collapsed]);
 
   // Sidebar width variable
   const sidebarWidth = collapsed ? "0px" : "20rem"; // 320px
@@ -114,11 +147,11 @@ const Index = () => {
           className="relative w-full h-full"
           style={{ display: "grid", gridTemplateColumns: `${sidebarWidth} 1fr` }}
         >
-          {/* LEFT: filters, flush to left edge */}
+          {/* LEFT: filters, flush to left edge - NO FIXED POSITIONING */}
           {!isMobile && (
             <aside
               id="filters-panel"
-              className="h-full overflow-auto bg-[#0b1020] text-white"
+              className="h-full overflow-y-auto bg-[#0b1020] text-white"
               aria-label="Filters"
             >
               {/* internal padding only for contents */}
@@ -152,15 +185,11 @@ const Index = () => {
               type="button"
               onClick={() => setCollapsed(v => !v)}
               title={collapsed ? "Show filters" : "Hide filters"}
-              className="
-                absolute z-[60] top-1/2 -translate-y-1/2
-                flex items-center justify-center
-                h-10 w-6 rounded-md border border-white/15 bg-black/40 backdrop-blur
-                text-white hover:bg-black/60
-              "
+              className="absolute z-[60] h-10 w-6 flex items-center justify-center rounded-md border border-white/15 bg-black/40 text-white hover:bg-black/60"
               style={{
-                left: sidebarWidth,        // sits on the boundary; moves to 0 when collapsed
-                marginLeft: "-12px"        // half the handle width so it straddles the edge
+                left: collapsed ? '0px' : '20rem',
+                marginLeft: '-12px',                 // straddle the edge
+                top: 'calc(var(--header-h) + 50% - 20px)' // centered within content area, below header
               }}
               aria-controls="filters-panel"
               aria-expanded={!collapsed}

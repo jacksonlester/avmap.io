@@ -125,6 +125,17 @@
 
   html, body, #root {
     height: 100%;
+    width: 100%;
+  }
+  
+  html, body {
+    overflow: hidden;              /* page itself doesn't scroll */
+  }
+  
+  #root {
+    max-width: none;
+    margin: 0;
+    padding: 0;
   }
 
   body {

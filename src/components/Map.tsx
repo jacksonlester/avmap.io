@@ -376,7 +376,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
 
   return (
-    <div className={className}>
+    <div className="w-full h-full">
       <div ref={mapContainer} className="w-full h-full relative">
         {/* Desktop overlap picker */}
         {overlapPicker && !isMobile && (
