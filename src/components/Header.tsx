@@ -30,7 +30,7 @@ export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) 
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 border-b bg-background">
+    <header id="app-header" className="fixed top-0 inset-x-0 z-50 border-b bg-background">
       <div className="w-full box-border px-4 h-14 flex items-center justify-between">
         <div className="flex items-center gap-6 shrink-0">
           <Link to="/" className="flex items-center space-x-2">

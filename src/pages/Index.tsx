@@ -80,6 +80,19 @@ const Index = () => {
     return () => clearTimeout(t);
   }, [collapsed]);
 
+  // Compute header height and set CSS variable
+  useEffect(() => {
+    function setHeaderVar() {
+      const h = document.getElementById('app-header')?.offsetHeight ?? 56;
+      document.documentElement.style.setProperty('--header-h', `${h}px`);
+      // also tell Map to resize after layout shift
+      window.dispatchEvent(new Event('avmap:container-resize'));
+    }
+    setHeaderVar();
+    window.addEventListener('resize', setHeaderVar);
+    return () => window.removeEventListener('resize', setHeaderVar);
+  }, []);
+
   // Sidebar width variable
   const sidebarWidth = collapsed ? "0px" : "20rem"; // 320px
 
@@ -88,10 +101,17 @@ const Index = () => {
       {/* Fixed header */}
       <Header onToggleFilters={toggleFilters} isMobile={isMobile} showFilters={showFilters} />
       {/* Main content below header */}
-      <main id="main-shell" className="w-screen max-w-none h-[calc(100vh-56px)]">
+      <main
+        id="main-shell"
+        className="w-screen max-w-none"
+        style={{
+          paddingTop: 'var(--header-h)',                  // push content below header
+          height: 'calc(100vh - var(--header-h))'         // fill rest of viewport
+        }}
+      >
         <div
           id="map-shell"
-          className="relative h-full w-full"
+          className="relative w-full h-full"
           style={{ display: "grid", gridTemplateColumns: `${sidebarWidth} 1fr` }}
         >
           {/* LEFT: filters, flush to left edge */}
@@ -133,7 +153,7 @@ const Index = () => {
               onClick={() => setCollapsed(v => !v)}
               title={collapsed ? "Show filters" : "Hide filters"}
               className="
-                absolute z-50 top-1/2 -translate-y-1/2
+                absolute z-[60] top-1/2 -translate-y-1/2
                 flex items-center justify-center
                 h-10 w-6 rounded-md border border-white/15 bg-black/40 backdrop-blur
                 text-white hover:bg-black/60
