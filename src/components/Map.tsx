@@ -92,6 +92,17 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     };
     window.addEventListener('resize', handleWindowResize);
     
+    // Listen for sidebar transition end to resize map
+    const filtersPanel = document.getElementById('filters-panel');
+    const handleSidebarTransition = (e: TransitionEvent) => {
+      if (e.propertyName === 'width' && map.current) {
+        map.current.resize();
+      }
+    };
+    if (filtersPanel) {
+      filtersPanel.addEventListener('transitionend', handleSidebarTransition);
+    }
+    
     map.current.on('load', () => {
       if (map.current) map.current.resize();
     });
@@ -100,6 +111,9 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('resize', handleWindowResize);
+      if (filtersPanel) {
+        filtersPanel.removeEventListener('transitionend', handleSidebarTransition);
+      }
       if (map.current) {
         map.current.remove();
         map.current = null;
