@@ -69,42 +69,46 @@ const Index = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex flex-col h-screen bg-background w-full pt-14">
+      <div className="flex flex-col h-screen bg-background w-full">
         <Header onToggleFilters={toggleFilters} isMobile={isMobile} showFilters={showFilters} />
         
-        <div className="flex flex-1 relative overflow-hidden w-full">
-          {/* Desktop Sidebar */}
-          {!isMobile && (
-            <AppSidebar 
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-            />
-          )}
+        <main className="w-full h-[calc(100vh-56px)]">
+          <div id="map-shell" className="flex w-full h-full">
+            {/* Desktop Sidebar */}
+            {!isMobile && (
+              <AppSidebar 
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+              />
+            )}
 
-          {/* Map */}
-          <div className="flex-1 relative">
-            <Map
-              serviceAreas={serviceAreas}
-              filters={filters}
-              onServiceAreaClick={handleServiceAreaClick}
-              className="w-full h-full"
-            />
-          </div>
-
-          {/* Mobile Filters Overlay */}
-          {isMobile && showFilters && (
-            <div className="absolute inset-0 z-40 bg-background/80 backdrop-blur-sm">
-              <div className="absolute top-4 left-4 right-4">
-                <Filters
+            {/* Map area */}
+            <section className="relative flex-1 min-w-0">
+              <div id="map-container" className="absolute inset-0">
+                <Map
+                  serviceAreas={serviceAreas}
                   filters={filters}
-                  onFiltersChange={handleFiltersChange}
-                  onClose={toggleFilters}
-                  isMobile={true}
+                  onServiceAreaClick={handleServiceAreaClick}
+                  className="w-full h-full"
                 />
               </div>
-            </div>
-          )}
-        </div>
+            </section>
+
+            {/* Mobile Filters Overlay */}
+            {isMobile && showFilters && (
+              <div className="absolute inset-0 z-40 bg-background/80 backdrop-blur-sm">
+                <div className="absolute top-4 left-4 right-4">
+                  <Filters
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                    onClose={toggleFilters}
+                    isMobile={true}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
 
         {/* Bottom Sheet */}
         <BottomSheet

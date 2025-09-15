@@ -80,8 +80,26 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       toast.error('Map failed to load. Check token and allowed origins.');
     });
 
+    // Wire up resize handling for sidebar toggle and window resize
+    const shell = document.getElementById('map-shell');
+    const resizeObserver = new ResizeObserver(() => {
+      if (map.current) map.current.resize();
+    });
+    if (shell) resizeObserver.observe(shell);
+    
+    const handleWindowResize = () => {
+      if (map.current) map.current.resize();
+    };
+    window.addEventListener('resize', handleWindowResize);
+    
+    map.current.on('load', () => {
+      if (map.current) map.current.resize();
+    });
+
     // Cleanup
     return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleWindowResize);
       if (map.current) {
         map.current.remove();
         map.current = null;
