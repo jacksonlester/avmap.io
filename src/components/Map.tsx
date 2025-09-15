@@ -385,8 +385,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
 
   return (
-    <div className={className}>
-      <div ref={mapContainer} className="w-full h-full relative">
+    <div ref={mapContainer} className="w-full h-full relative">
         {/* Desktop overlap picker */}
         {overlapPicker && !isMobile && (
           <OverlapPicker
@@ -396,7 +395,6 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
             onAreaHover={handleOverlapAreaHover}
           />
         )}
-      </div>
       
       {/* Mobile overlap picker */}
       {isMobile && (
