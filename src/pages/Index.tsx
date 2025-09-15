@@ -82,7 +82,7 @@ const Index = () => {
               />
             )}
 
-            {/* Map area */}
+            {/* MAP COLUMN — must grow to full width */}
             <section className="relative flex-1 min-w-0">
               <div id="map-container" className="absolute inset-0">
                 <Map
