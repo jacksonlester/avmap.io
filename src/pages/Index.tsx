@@ -72,7 +72,7 @@ const Index = () => {
       <div className="flex flex-col h-screen bg-background w-full overflow-hidden">
         <Header onToggleFilters={toggleFilters} isMobile={isMobile} showFilters={showFilters} />
         
-        <div className="flex flex-1 relative w-full h-0">
+        <div className="flex flex-1 w-full overflow-hidden">
           {/* Desktop Sidebar */}
           {!isMobile && (
             <AppSidebar 
@@ -82,7 +82,7 @@ const Index = () => {
           )}
 
           {/* Map */}
-          <div className="flex-1 relative">
+          <div className="flex-1 overflow-hidden">
             <Map
               serviceAreas={serviceAreas}
               filters={filters}
