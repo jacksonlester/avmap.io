@@ -157,7 +157,7 @@ const Index = () => {
           {!isMobile && (
             <aside
               id="filters-panel"
-              className="h-full overflow-y-auto bg-[#0b1020] text-white"
+              className="h-full overflow-y-auto bg-background text-foreground border-r"
               aria-label="Filters"
             >
               {/* internal padding only for contents */}
