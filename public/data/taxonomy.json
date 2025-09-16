@@ -1,7 +1,7 @@
 {
-  "topic": ["Regulatory", "Launch", "Funding", "Product", "Incident", "Operations", "Recall", "Partnership", "Analysis", "Milestone", "Expansion", "Investigation", "Policy"],
-  "companies": ["Baidu", "Waymo", "Zoox", "Cruise", "Motional", "May Mobility", "Tesla", "Uber", "Lyft", "Apollo Go", "Nuro", "Lucid", "Momenta"],
-  "geography": ["San Francisco", "Los Angeles", "Phoenix", "Las Vegas", "Austin", "Seattle", "Oakland", "Germany", "China", "United States", "Atlanta", "UK", "San Jose"],
-  "tags": ["CPUC", "Regulation", "DMV", "Safety", "NHTSA", "Launch", "Scale", "Partnerships", "Incident", "Urbanism", "Update", "International", "Testing"],
-  "type": ["News Article", "Press Release", "Blog Post", "Podcast Episode", "Report", "Journal Article"]
+  "topic": [],
+  "companies": [],
+  "geography": [],
+  "tags": [],
+  "type": []
 }
