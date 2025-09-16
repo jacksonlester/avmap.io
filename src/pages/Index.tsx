@@ -13,7 +13,7 @@ const Index = () => {
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
   const isMobile = useIsMobile();
 
   // Initialize filters from URL params with all options checked by default
