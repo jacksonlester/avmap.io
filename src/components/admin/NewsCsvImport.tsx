@@ -423,7 +423,7 @@ export default function NewsCsvImport({ onCommit, currentTaxonomy }: Props) {
             </div>
 
             {/* Action buttons */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap relative z-10 mt-4">
               <Button onClick={handleCommit} className="flex items-center gap-2">
                 <Check className="h-4 w-4" />
                 Commit to Admin State
