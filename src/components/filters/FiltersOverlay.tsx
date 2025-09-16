@@ -212,7 +212,7 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
               className="h-6 px-2 text-xs text-white/70 hover:text-white hover:bg-white/10"
             >
               <RotateCcw className="h-3 w-3 mr-1" />
-              Reset
+              <X className="h-3 w-3" />
             </Button>
             <Button
               variant="ghost"
