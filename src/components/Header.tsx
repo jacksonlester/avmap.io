@@ -11,7 +11,7 @@ interface HeaderProps {
   showFilters?: boolean;
 }
 
-export function Header({ onToggleFilters, isMobile, showFilters }: HeaderProps) {
+export function Header({ onToggleFilters, isMobile = false, showFilters = false }: HeaderProps = {}) {
   const { theme, setTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();

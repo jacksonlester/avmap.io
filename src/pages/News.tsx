@@ -3,16 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { CreatableSingle, CreatableMulti } from '@/components/ui/creatable-select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { FiltersBar } from '@/components/filters/FiltersBar';
 import { NewsItem, Taxonomy, NewsFilters } from '@/types/news';
 import { format } from 'date-fns';
-import { Search, ExternalLink, Calendar, MapPin, Tag, ChevronDown } from 'lucide-react';
+import { ExternalLink, Calendar, MapPin, Tag } from 'lucide-react';
 
 export default function News() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,7 +33,7 @@ export default function News() {
     search: searchParams.get('search') || '',
   }));
 
-  const [collapsed, setCollapsed] = useState(true);
+  
 
   // Update URL when filters change
   useEffect(() => {
@@ -143,32 +140,10 @@ export default function News() {
   };
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="min-h-screen bg-background flex">
-        <Sidebar variant="sidebar" collapsible="icon" className="border-r-0">
-          <SidebarContent className="pt-20 pr-2 bg-background relative">
-            {/* Trigger button on the right edge of content */}
-            <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 z-10">
-              <SidebarTrigger className="bg-background border border-border rounded-full p-1 shadow-md hover:shadow-lg transition-shadow" />
-            </div>
-            
-            <SidebarGroup>
-              <SidebarGroupContent className="pr-2">
-                <FiltersComponent 
-                  filters={filters} 
-                  setFilters={setFilters} 
-                  taxonomy={taxonomy} 
-                  clearFilters={clearFilters} 
-                />
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
-
-        <div className="flex-1 flex flex-col">
-          <Header />
-          
-          <main className="flex-1 container mx-auto px-4 py-8" style={{ paddingTop: 'calc(var(--header-h) + 2rem)' }}>
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8" style={{ paddingTop: 'calc(var(--header-h) + 2rem)' }}>
             {/* Hero Section */}
             <div className="text-center mb-12">
               <h1 className="text-4xl font-bold mb-4">Autonomous Vehicle News</h1>
@@ -300,98 +275,14 @@ export default function News() {
             )}
           </>
         )}
-          </main>
-        </div>
-      </div>
-    </SidebarProvider>
-  );
-}
+      </main>
 
-function FiltersComponent({ filters, setFilters, taxonomy, clearFilters }: {
-  filters: NewsFilters;
-  setFilters: React.Dispatch<React.SetStateAction<NewsFilters>>;
-  taxonomy: Taxonomy;
-  clearFilters: () => void;
-}) {
-  const { state } = useSidebar();
-  
-  if (state === "collapsed") {
-    return null;
-  }
-
-  return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="px-0">
-        <CardTitle className="flex items-center justify-between text-sm">
-          <span>Filters</span>
-          <Button variant="outline" size="sm" onClick={clearFilters}>
-            Clear All
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-0 space-y-4">
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search articles..."
-            value={filters.search}
-            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-            className="pl-8"
-          />
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Topic</label>
-            <CreatableSingle
-              options={taxonomy.topic}
-              value={filters.topic || ''}
-              onChange={(value) => setFilters(prev => ({ ...prev, topic: value || undefined }))}
-              placeholder="Select topic"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Type</label>
-            <CreatableSingle
-              options={taxonomy.type}
-              value={filters.type || ''}
-              onChange={(value) => setFilters(prev => ({ ...prev, type: value || undefined }))}
-              placeholder="Select type"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Companies</label>
-            <CreatableMulti
-              options={taxonomy.companies}
-              value={filters.companies}
-              onChange={(values) => setFilters(prev => ({ ...prev, companies: values }))}
-              placeholder="Select companies"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Geography</label>
-            <CreatableMulti
-              options={taxonomy.geography}
-              value={filters.geography}
-              onChange={(values) => setFilters(prev => ({ ...prev, geography: values }))}
-              placeholder="Select locations"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Tags</label>
-            <CreatableMulti
-              options={taxonomy.tags}
-              value={filters.tags}
-              onChange={(values) => setFilters(prev => ({ ...prev, tags: values }))}
-              placeholder="Select tags"
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      {/* Floating Filters Bar */}
+      <FiltersBar
+        filters={filters}
+        onChange={setFilters}
+        taxonomy={taxonomy}
+      />
+    </div>
   );
 }
