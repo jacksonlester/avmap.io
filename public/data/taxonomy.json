@@ -1,0 +1,65 @@
+{
+  "topic": [
+    "Regulatory",
+    "Launch",
+    "Partnership",
+    "Operations",
+    "Milestone",
+    "Incident",
+    "Recall",
+    "Expansion",
+    "Investigation",
+    "Analysis"
+  ],
+  "companies": [
+    "Cruise",
+    "Waymo",
+    "Uber",
+    "Zoox",
+    "Lyft",
+    "May Mobility",
+    "Motional",
+    "Apollo Go",
+    "Baidu",
+    "Tesla",
+    "Lucid",
+    "Nuro",
+    "Momenta"
+  ],
+  "geography": [
+    "San Francisco",
+    "United States",
+    "Los Angeles",
+    "Phoenix",
+    "Austin",
+    "Las Vegas",
+    "Atlanta",
+    "China",
+    "UK",
+    "San Jose",
+    "Germany",
+    "Seattle",
+    "Oakland"
+  ],
+  "tags": [
+    "DMV",
+    "Regulation",
+    "Safety",
+    "CPUC",
+    "Launch",
+    "NHTSA",
+    "Partnerships",
+    "Scale",
+    "Incident",
+    "Update",
+    "International",
+    "Urbanism",
+    "Testing"
+  ],
+  "type": [
+    "Press Release",
+    "Blog Post",
+    "News Article",
+    "Podcast Episode"
+  ]
+}
