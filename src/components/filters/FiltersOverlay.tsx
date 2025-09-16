@@ -32,7 +32,7 @@ interface FiltersOverlayProps {
 }
 
 export function FiltersOverlay({ page, taxonomy, state, onChange, className }: FiltersOverlayProps) {
-  const [isMinimized, setIsMinimized] = useState(true);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -133,14 +133,11 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
           <Button
             variant="secondary"
             size="sm"
-            className="fixed left-4 z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 flex items-center gap-2"
+            className="fixed left-4 z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60"
             style={{ top: "calc(var(--header-h) + 12px)" }}
           >
-            <Filter className="h-4 w-4" />
-            <span>Filters</span>
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
-              {state.companies.length + state.statuses.length}/{companies.length + statuses.length}
-            </span>
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="w-80 p-0">
@@ -167,21 +164,17 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
 
   // Minimized FAB
   if (isMinimized) {
-    const activeFilters = state.companies.length + state.statuses.length;
-    const totalFilters = companies.length + statuses.length;
-    
     return (
       <Button
         onClick={() => setIsMinimized(false)}
-        className="fixed z-[60] h-12 min-w-12 px-3 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 flex items-center gap-2"
+        className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
         style={{ 
           left: `${position.x}px`, 
           top: `calc(var(--header-h) + ${position.y}px)` 
         }}
         title="Show filters"
       >
-        <Filter className="h-4 w-4" />
-        <span className="text-xs font-medium">{activeFilters}/{totalFilters}</span>
+        <Filter className="h-5 w-5" />
       </Button>
     );
   }
