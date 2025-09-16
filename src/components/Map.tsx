@@ -115,7 +115,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       const INITIAL_BOUNDS = boundsFrom(pts);
 
       // Widen to the west to give SF more breathing room
-      const WEST_BOOST_DEG = 1.2; // ~100–110 km around SF; tweak as needed
+      const WEST_BOOST_DEG = 4.2; // ~100–110 km around SF; tweak as needed
       const sw0 = INITIAL_BOUNDS.getSouthWest();
       const ne0 = INITIAL_BOUNDS.getNorthEast();
 
