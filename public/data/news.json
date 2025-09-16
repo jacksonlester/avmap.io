@@ -1,1 +1,657 @@
-[]
+[
+  {
+    "title": "California DMV suspends Cruise driverless permits",
+    "url": "https://www.dmv.ca.gov/portal/news-and-media/dmv-statement-on-cruise-llc-suspension/?utm_source=chatgpt.com",
+    "date": "2023-10-24",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [
+      "Cruise"
+    ],
+    "geography": [
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "DMV",
+      "Regulation",
+      "Safety"
+    ],
+    "type": "Press Release",
+    "id": "644b69a1-5049-4303-afda-f266907481bf",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "CPUC approves 24/7 paid robotaxi service in San Francisco (Waymo & Cruise)",
+    "url": "https://www.cpuc.ca.gov/news-and-updates/all-news/cpuc-approves-permits-for-cruise-and-waymo-to-charge-fares-for-passenger-service-in-sf-2023?utm_source=chatgpt.com",
+    "date": "2023-08-10",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [
+      "Cruise",
+      "Waymo"
+    ],
+    "geography": [
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "CPUC",
+      "Regulation"
+    ],
+    "type": "Press Release",
+    "id": "dc7e75f1-f258-48a4-9202-b572086aaaec",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo One opens to the public in Los Angeles",
+    "url": "https://waymo.com/blog/2024/11/waymo-one-open-to-all-in-los-angeles?utm_source=chatgpt.com",
+    "date": "2024-11-12",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Los Angeles",
+      "United States"
+    ],
+    "tags": [
+      "Launch"
+    ],
+    "type": "Blog Post",
+    "id": "d34345d7-35fc-4957-a374-a627126aaf3f",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "NHTSA updates occupant-protection rules for vehicles without manual controls",
+    "url": "https://www.nhtsa.gov/press-releases/nhtsa-finalizes-first-occupant-protection-safety-standards-vehicles-without-driving?utm_source=chatgpt.com",
+    "date": "2022-03-10",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [],
+    "geography": [
+      "United States"
+    ],
+    "tags": [
+      "NHTSA",
+      "Regulation"
+    ],
+    "type": "Press Release",
+    "id": "15916436-2cd0-47f3-9dd5-35a5678f7441",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Uber × Waymo multi‑year partnership announced (rides + deliveries)",
+    "url": "https://waymo.com/blog/2023/05/waymo-and-uber-partner-to-bring-waymos",
+    "date": "2023-05-23",
+    "summary": "",
+    "topic": "Partnership",
+    "companies": [
+      "Uber",
+      "Waymo"
+    ],
+    "geography": [
+      "Phoenix",
+      "United States"
+    ],
+    "tags": [
+      "Partnerships"
+    ],
+    "type": "Blog Post",
+    "id": "7ace50df-ea79-46a4-9660-637c438c1357",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo fully driverless rides open to the public in Phoenix",
+    "url": "https://waymo.com/blog/2020/10/waymo-is-opening-its-fully-driverless-service-in-phoenix?utm_source=chatgpt.com",
+    "date": "2020-10-08",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Phoenix",
+      "United States"
+    ],
+    "tags": [
+      "Launch"
+    ],
+    "type": "Blog Post",
+    "id": "1111e377-267d-45fe-8580-b95c1c727436",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Cruise pauses all driverless operations nationwide",
+    "url": "https://apnews.com/article/cruise-robotaxi-suspends-operations-gm-73f27ef959afe1e201e61f0fd31802d5",
+    "date": "2023-10-26",
+    "summary": "",
+    "topic": "Operations",
+    "companies": [
+      "Cruise"
+    ],
+    "geography": [
+      "Austin",
+      "Phoenix",
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "Safety"
+    ],
+    "type": "News Article",
+    "id": "dcf5c855-f80a-44cd-a71d-3447ce04ae39",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo hits ~150k paid trips/week milestone",
+    "url": "https://seekingalpha.com/news/4221641-robotaxi-stunner-waymo-hits-milestone-of-15000-paid-autonomous-trips-a-week",
+    "date": "2024-10-29",
+    "summary": "",
+    "topic": "Milestone",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "United States"
+    ],
+    "tags": [
+      "Scale"
+    ],
+    "type": "News Article",
+    "id": "7f2b4503-2b32-4c44-a895-c806422f9ca3",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "NHTSA consent order: Cruise under-reported post-crash details",
+    "url": "https://www.nhtsa.gov/press-releases/consent-order-cruise-crash-reporting?utm_source=chatgpt.com",
+    "date": "2024-09-30",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [
+      "Cruise"
+    ],
+    "geography": [
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "NHTSA",
+      "Regulation"
+    ],
+    "type": "Press Release",
+    "id": "6776e6f1-17d0-4543-b774-632878a3c90d",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Zoox opens public robotaxi service in Las Vegas (free rides)",
+    "url": "https://www.reuters.com/business/autos-transportation/amazons-zoox-robotaxi-opens-public-with-free-service-las-vegas-2025-09-10/",
+    "date": "2025-09-10",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Zoox"
+    ],
+    "geography": [
+      "Las Vegas",
+      "United States"
+    ],
+    "tags": [
+      "Launch"
+    ],
+    "type": "News Article",
+    "id": "dbd68b30-6868-4d66-8c2c-0fda60ff01ab",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Federal Safety Agency Investigating Waymo's Autonomous Taxis",
+    "url": "https://www.kqed.org/news/11986059/federal-safety-agency-investigating-waymos-autonomous-taxis",
+    "date": "2024-05-14",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Phoenix",
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "NHTSA",
+      "Safety"
+    ],
+    "type": "News Article",
+    "id": "83af9c08-9ccd-4e0d-875e-15ee7ca6b5bc",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo driverless car hit bicyclist in SF intersection, company says",
+    "url": "https://abc7news.com/post/waymo-driverless-car-san-francisco-bicyclist-hit-robotaxi-accident/14394661/",
+    "date": "2024-02-07",
+    "summary": "",
+    "topic": "Incident",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "Incident",
+      "Safety"
+    ],
+    "type": "News Article",
+    "id": "ef40032d-a338-45d1-9201-ddf7eb85eec6",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo rides go live on Uber in metro Phoenix",
+    "url": "https://waymo.com/blog/2023/10/the-waymo-driver-now-available-on-uber-in-phoenix",
+    "date": "2023-10-26",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Uber",
+      "Waymo"
+    ],
+    "geography": [
+      "Phoenix",
+      "United States"
+    ],
+    "tags": [
+      "Launch",
+      "Partnerships"
+    ],
+    "type": "Blog Post",
+    "id": "ee990b71-cca9-465b-bf69-dd25f303caf6",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Why Waymo's Self-Driving Cars Became a Target of Protesters in Los Angeles",
+    "url": "https://time.com/7292652/waymo-self-driving-cars-vandalized-fire-protests-los-angeles-why/",
+    "date": "2025-06-09",
+    "summary": "",
+    "topic": "Incident",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Los Angeles",
+      "United States"
+    ],
+    "tags": [
+      "Incident"
+    ],
+    "type": "News Article",
+    "id": "a207b32d-cc66-408a-b7d4-11e45ba030ed",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo recalls 1,200 robotaxis following low-speed collisions with gates and chains",
+    "url": "https://techcrunch.com/2025/05/14/waymo-recalls-1200-robotaxis-following-low-speed-collisions-with-gates-and-chains/",
+    "date": "2025-05-14",
+    "summary": "",
+    "topic": "Recall",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Phoenix",
+      "San Francisco",
+      "United States"
+    ],
+    "tags": [
+      "Safety"
+    ],
+    "type": "News Article",
+    "id": "2327f15f-244f-4889-b394-76bb4736cde6",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Lyft × May Mobility pilot in Atlanta",
+    "url": "https://www.lyft.com/blog/posts/a-new-chapter-for-rideshare-lyft-and-may-mobility-bring-autonomous-vehicles",
+    "date": "2025-09-10",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Lyft",
+      "May Mobility"
+    ],
+    "geography": [
+      "Atlanta",
+      "United States"
+    ],
+    "tags": [
+      "Launch"
+    ],
+    "type": "Blog Post",
+    "id": "edb4f44f-cd07-4773-a6b4-a322aad8fb01",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo × Uber expand to Austin & Atlanta",
+    "url": "https://www.waymo.com/blog/2024/09/waymo-and-uber-expand-partnership",
+    "date": "2024-09-23",
+    "summary": "",
+    "topic": "Expansion",
+    "companies": [
+      "Uber",
+      "Waymo"
+    ],
+    "geography": [
+      "Atlanta",
+      "Austin",
+      "United States"
+    ],
+    "tags": [
+      "Partnerships",
+      "Scale"
+    ],
+    "type": "Blog Post",
+    "id": "8cc056d9-2425-40b9-acc2-a2a53d93fd0c",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Motional delays commercial robotaxi plans amid restructuring",
+    "url": "https://techcrunch.com/2024/05/07/motional-delays-commercial-robotaxi-plans-amid-restructuring/",
+    "date": "2024-05-07",
+    "summary": "",
+    "topic": "Operations",
+    "companies": [
+      "Motional"
+    ],
+    "geography": [
+      "United States"
+    ],
+    "tags": [
+      "Scale",
+      "Update"
+    ],
+    "type": "News Article",
+    "id": "c793d3ef-1083-4e6f-b932-733eaed54350",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Baidu gets permits for first fully driverless taxi service in China",
+    "url": "https://www.cnn.com/2022/08/08/tech/baidu-robotaxi-permits-china",
+    "date": "2022-08-08",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [
+      "Apollo Go",
+      "Baidu"
+    ],
+    "geography": [
+      "China"
+    ],
+    "tags": [
+      "International",
+      "Launch"
+    ],
+    "type": "News Article",
+    "id": "9c7d57fb-d412-452d-9cd7-676907eed887",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Feds Audit Tesla Over FSD Crashes — What Owners Should Know",
+    "url": "https://autos.yahoo.com/articles/feds-audit-tesla-over-fsd-203000211.html",
+    "date": "2025-09-01",
+    "summary": "",
+    "topic": "Investigation",
+    "companies": [
+      "Tesla"
+    ],
+    "geography": [
+      "United States"
+    ],
+    "tags": [
+      "NHTSA",
+      "Regulation",
+      "Safety"
+    ],
+    "type": "News Article",
+    "id": "78a3396a-4d4c-467e-b144-1886ac8f3377",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "A self-driving car traffic jam is coming for US cities",
+    "url": "https://www.vox.com/future-perfect/461393/self-driving-cars-cities-congestion-avs-parking",
+    "date": "2025-09-15",
+    "summary": "",
+    "topic": "Analysis",
+    "companies": [],
+    "geography": [
+      "United States"
+    ],
+    "tags": [
+      "Regulation",
+      "Urbanism"
+    ],
+    "type": "News Article",
+    "id": "6b3f2f5f-c82f-42e2-ac0c-5f6d560b26d4",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Green light for self-driving cars: the Automated Vehicles Act",
+    "url": "https://www.lewissilkin.com/insights/2024/07/10/green-light-for-self-driving-cars-the-automated-vehicles-act-102jcju",
+    "date": "2024-07-10",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [],
+    "geography": [
+      "UK"
+    ],
+    "tags": [
+      "International",
+      "Regulation"
+    ],
+    "type": "Blog Post",
+    "id": "4a117f40-00b8-4e5a-a33c-37d857a44f34",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Inside the Nuro–Lucid–Uber Partnership with Andrew Chapin",
+    "url": "https://www.thedriverlessdigest.com/p/inside-the-nuroluciduber-partnership",
+    "date": "2025-08-04",
+    "summary": "",
+    "topic": "Partnership",
+    "companies": [
+      "Lucid",
+      "Nuro",
+      "Uber"
+    ],
+    "geography": [
+      "United States"
+    ],
+    "tags": [
+      "Partnerships",
+      "Scale"
+    ],
+    "type": "Podcast Episode",
+    "id": "15a3b913-f6b7-47be-a912-c34623ad79eb",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "'Why can't we move even faster?': San Jose's mayor on lessons for SF from Waymo deal",
+    "url": "https://sfstandard.com/2025/09/11/waymo-san-jos-airport-tesla-zoox-fifa-superbowl-robotaxi/",
+    "date": "2025-09-11",
+    "summary": "",
+    "topic": "Regulatory",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "San Jose",
+      "United States"
+    ],
+    "tags": [
+      "Launch",
+      "Regulation",
+      "Scale"
+    ],
+    "type": "News Article",
+    "id": "b1cfd2cb-9730-436c-898d-f125112c6c60",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Tesla and Waymo seek Bay Area airport permits for robotaxi operations",
+    "url": "https://www.aol.com/news/tesla-waymo-gunning-coveted-airport-105301733.html",
+    "date": "2025-09-10",
+    "summary": "",
+    "topic": "Expansion",
+    "companies": [
+      "Tesla",
+      "Waymo"
+    ],
+    "geography": [
+      "San Francisco",
+      "San Jose",
+      "United States"
+    ],
+    "tags": [
+      "Launch",
+      "Partnerships",
+      "Scale"
+    ],
+    "type": "News Article",
+    "id": "dc770a1b-fe21-4ce7-ad04-30880cf80ea1",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Lyft and May Mobility launch robotaxis in Atlanta",
+    "url": "https://techcrunch.com/2025/09/10/lyfts-modest-robotaxi-launch-highlights-growing-gap-with-uber-and-waymo/",
+    "date": "2025-09-10",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Lyft",
+      "May Mobility"
+    ],
+    "geography": [
+      "Atlanta",
+      "United States"
+    ],
+    "tags": [
+      "Launch",
+      "Partnerships"
+    ],
+    "type": "News Article",
+    "id": "dbe42e94-a9e6-42f1-b978-bb87eca8aaa8",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Uber and Momenta will test fully driverless cars in Germany",
+    "url": "https://www.theverge.com/news/772639/uber-momenta-l4-driverless-test-munich-robotaxi",
+    "date": "2025-09-07",
+    "summary": "",
+    "topic": "Partnership",
+    "companies": [
+      "Momenta",
+      "Uber"
+    ],
+    "geography": [
+      "Germany"
+    ],
+    "tags": [
+      "Partnerships",
+      "Testing"
+    ],
+    "type": "News Article",
+    "id": "81fbf7fd-7a25-43a5-a82f-0593adbe2351",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Amazon's Zoox launches its robotaxi service in Las Vegas",
+    "url": "https://apnews.com/article/amazon-zoox-robotaxis-las-vegas-bd5cb24602fb16243efcba05c7fe518f",
+    "date": "2025-09-10",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Zoox"
+    ],
+    "geography": [
+      "Las Vegas",
+      "United States"
+    ],
+    "tags": [
+      "Launch"
+    ],
+    "type": "News Article",
+    "id": "e0423105-e62d-4e59-966b-2978c38467c0",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Waymo cars spotted in Seattle and Bellevue",
+    "url": "https://www.fox13seattle.com/news/waymo-cars-spotted-seattle-bellevue",
+    "date": "2025-09-10",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Seattle",
+      "United States"
+    ],
+    "tags": [
+      "Testing"
+    ],
+    "type": "News Article",
+    "id": "a06d35b8-a7c1-44a1-81a9-681f159c5a18",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  },
+  {
+    "title": "Is Waymo coming to Oakland?",
+    "url": "https://oaklandside.org/2025/09/15/is-waymo-coming-to-oakland/",
+    "date": "2025-09-15",
+    "summary": "",
+    "topic": "Launch",
+    "companies": [
+      "Waymo"
+    ],
+    "geography": [
+      "Oakland",
+      "United States"
+    ],
+    "tags": [
+      "Launch",
+      "Scale"
+    ],
+    "type": "News Article",
+    "id": "812c3ce6-b3ab-406a-b8c2-a1cf592f71be",
+    "createdAt": "2025-09-16T01:17:05.101Z",
+    "updatedAt": "2025-09-16T01:17:05.101Z"
+  }
+]
