@@ -40,7 +40,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-122.4, 37.8], // San Francisco Bay Area
-      zoom: 8,
+      zoom: 2,
       minZoom: 0,
       maxZoom: 18,
       projection: 'mercator' as any
