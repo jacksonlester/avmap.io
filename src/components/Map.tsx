@@ -40,7 +40,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [-122.4, 37.8], // San Francisco Bay Area
-      zoom: 2,
+      zoom: 8,
       minZoom: 0,
       maxZoom: 18,
       projection: 'mercator' as any
@@ -115,7 +115,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       const INITIAL_BOUNDS = boundsFrom(pts);
 
       // Widen to the west to give SF more breathing room
-      const WEST_BOOST_DEG = 3.5; // ~100–110 km around SF; tweak as needed
+      const WEST_BOOST_DEG = 6; // ~100–110 km around SF; tweak as needed
       const sw0 = INITIAL_BOUNDS.getSouthWest();
       const ne0 = INITIAL_BOUNDS.getNorthEast();
 
