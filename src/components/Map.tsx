@@ -115,7 +115,7 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
       const INITIAL_BOUNDS = boundsFrom(pts);
 
       map.current?.fitBounds(INITIAL_BOUNDS, {
-        padding: { top: 72, right: 24, bottom: 24, left: 24 }, // keep UI off edges
+        padding: { top: 72, right: 24, bottom: 24, left: 220 }, // extra left padding for overlay
         linear: true,
         duration: 0
       });

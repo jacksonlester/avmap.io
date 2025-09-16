@@ -191,7 +191,7 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
       style={{
         left: `${position.x}px`,
         top: `calc(var(--header-h) + ${position.y}px)`,
-        width: "min(340px, 92vw)",
+        width: "min(180px, 80vw)",
         maxHeight: "60vh"
       }}
     >
