@@ -16,6 +16,7 @@ import { downloadJSON } from '@/lib/json';
 import { getCurrentISODate, getCurrentISOTimestamp } from '@/lib/date';
 import { NewsItem, Taxonomy } from '@/types/news';
 import { Pencil, Trash2, Download, RefreshCw, Search } from 'lucide-react';
+import NewsCsvImport from '@/components/admin/NewsCsvImport';
 
 const newsSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(160, 'Title must be at most 160 characters'),
@@ -215,6 +216,11 @@ export default function NewsAdmin() {
     });
   };
 
+  const handleCsvCommit = (importedNews: NewsItem[], importedTaxonomy: Taxonomy) => {
+    setNews(importedNews);
+    setTaxonomy(importedTaxonomy);
+  };
+
   const filteredNews = news.filter(item =>
     item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -287,7 +293,13 @@ export default function NewsAdmin() {
             </div>
           </div>
 
-          <div className="grid h-[calc(100%-5rem)] w-full grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* CSV Import Section */}
+          <NewsCsvImport 
+            onCommit={handleCsvCommit}
+            currentTaxonomy={taxonomy}
+          />
+
+          <div className="grid h-[calc(100%-15rem)] w-full grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Left: Form */}
             <Card className="overflow-y-auto">
               <CardHeader>
