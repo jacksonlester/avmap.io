@@ -114,11 +114,43 @@ export function Map({ serviceAreas, filters, onServiceAreaClick, className }: Ma
 
       const INITIAL_BOUNDS = boundsFrom(pts);
 
-      map.current?.fitBounds(INITIAL_BOUNDS, {
-        padding: { top: 72, right: 24, bottom: 24, left: 220 }, // extra left padding for overlay
+      // Widen to the west to give SF more breathing room
+      const WEST_BOOST_DEG = 1.2; // ~100–110 km around SF; tweak as needed
+      const sw0 = INITIAL_BOUNDS.getSouthWest();
+      const ne0 = INITIAL_BOUNDS.getNorthEast();
+
+      // Push the west edge farther left
+      const widened = new mapboxgl.LngLatBounds(
+        [sw0.lng - WEST_BOOST_DEG, sw0.lat],
+        [ne0.lng, ne0.lat]
+      );
+
+      // Compute dynamic left padding based on the floating overlay width
+      const overlay = document.getElementById('filters-overlay');
+      const overlayW = overlay ? overlay.getBoundingClientRect().width : 0;
+
+      // Clamp so we don't over-pad on tiny screens
+      const containerW = (map.current?.getContainer() as HTMLDivElement).clientWidth || window.innerWidth;
+      const leftPad = Math.min(overlayW + 24, containerW * 0.4);
+
+      map.current?.fitBounds(widened, {
+        padding: { top: 72, right: 24, bottom: 24, left: leftPad },
         linear: true,
         duration: 0
       });
+
+      // Function to adjust padding when overlay state changes
+      function padForOverlay() {
+        if (!map.current) return;
+        const o = document.getElementById('filters-overlay');
+        const w = o ? o.getBoundingClientRect().width : 0;
+        const cw = (map.current.getContainer() as HTMLDivElement).clientWidth;
+        const lp = Math.min(w + 24, cw * 0.4);
+        map.current.setPadding({ top: 72, right: 24, bottom: 24, left: lp });
+      }
+
+      // Call after overlay mounts/toggles and on resize
+      window.addEventListener('resize', padForOverlay);
 
       // IMPORTANT: do this only once; do not re-apply on resize so user pans freely.
       
