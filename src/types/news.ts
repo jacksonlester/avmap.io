@@ -1,21 +1,31 @@
-export type StoryType = "Announcement" | "Launch" | "Partnership" | "Funding" | "Analysis" | "Regulatory" | "Safety" | "Other";
-
 export type NewsItem = {
-  id: string;
-  slug: string;
-  title: string;
-  source: string;      // e.g., AP, TechCrunch
-  url: string;         // original article link (external)
-  publishedAt: string; // ISO date
-  type: StoryType;
-  companies: string[]; // e.g., ["Waymo","Zoox","Tesla","Uber","Lyft","May Mobility"]
-  tags: string[];      // freeform
-  excerpt: string;
-  heroImage?: string;  // optional thumbnail
+  id: string;                 // uuid
+  title: string;              // required
+  url: string;                // required, valid URL
+  date: string;               // ISO date (yyyy-mm-dd)
+  summary: string;            // 0–500 chars
+  topic: string;              // single select
+  companies: string[];        // multi
+  geography: string[];        // multi
+  tags: string[];             // multi
+  type: string;               // single select
+  createdAt: string;          // ISO
+  updatedAt: string;          // ISO
 };
 
-export interface NewsFilters {
-  types: StoryType[];
+export type Taxonomy = {
+  topic: string[];            // single-select options
+  companies: string[];        // multi
+  geography: string[];        // multi
+  tags: string[];             // multi
+  type: string[];             // single-select options
+};
+
+export type NewsFilters = {
+  topic?: string;
   companies: string[];
+  geography: string[];
+  tags: string[];
+  type?: string;
   search: string;
-}
+};

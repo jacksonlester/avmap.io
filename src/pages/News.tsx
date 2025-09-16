@@ -1,189 +1,355 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
-import { Filters } from '@/components/news/Filters';
-import { NewsCard } from '@/components/news/Card';
-import { EmptyState } from '@/components/news/EmptyState';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { CreatableSingle, CreatableMulti } from '@/components/ui/creatable-select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { NewsItem, NewsFilters, StoryType } from '@/types/news';
-import { newsDataSource } from '@/lib/notionNews';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { NewsItem, Taxonomy, NewsFilters } from '@/types/news';
+import { format } from 'date-fns';
+import { Search, ExternalLink, Calendar, MapPin, Tag } from 'lucide-react';
 
-const News = () => {
+export default function News() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [taxonomy, setTaxonomy] = useState<Taxonomy>({
+    topic: [],
+    companies: [],
+    geography: [],
+    tags: [],
+    type: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Parse filters from URL
-  const [filters, setFilters] = useState<NewsFilters>(() => {
-    const types = searchParams.get('types')?.split(',').filter(Boolean) as StoryType[] || [];
-    const companies = searchParams.get('companies')?.split(',').filter(Boolean) || [];
-    const search = searchParams.get('q') || '';
-    
-    return { types, companies, search };
-  });
+  const [filters, setFilters] = useState<NewsFilters>(() => ({
+    topic: searchParams.get('topic') || undefined,
+    companies: searchParams.get('companies')?.split(',').filter(Boolean) || [],
+    geography: searchParams.get('geography')?.split(',').filter(Boolean) || [],
+    tags: searchParams.get('tags')?.split(',').filter(Boolean) || [],
+    type: searchParams.get('type') || undefined,
+    search: searchParams.get('search') || '',
+  }));
 
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
-    
-    if (filters.types.length > 0) {
-      params.set('types', filters.types.join(','));
-    }
-    if (filters.companies.length > 0) {
-      params.set('companies', filters.companies.join(','));
-    }
-    if (filters.search) {
-      params.set('q', filters.search);
-    }
-    
-    setSearchParams(params, { replace: true });
+    if (filters.topic) params.set('topic', filters.topic);
+    if (filters.companies.length > 0) params.set('companies', filters.companies.join(','));
+    if (filters.geography.length > 0) params.set('geography', filters.geography.join(','));
+    if (filters.tags.length > 0) params.set('tags', filters.tags.join(','));
+    if (filters.type) params.set('type', filters.type);
+    if (filters.search) params.set('search', filters.search);
+    setSearchParams(params);
   }, [filters, setSearchParams]);
 
-  // Load news data
+  // Load data
   useEffect(() => {
-    const loadNews = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        setError(null);
-        const data = await newsDataSource.list();
-        setNews(data);
+        const [newsRes, taxonomyRes] = await Promise.all([
+          fetch('/data/news.json'),
+          fetch('/data/taxonomy.json')
+        ]);
+
+        if (newsRes.ok) {
+          const newsData = await newsRes.json();
+          setNews(newsData);
+        }
+
+        if (taxonomyRes.ok) {
+          const taxonomyData = await taxonomyRes.json();
+          setTaxonomy(taxonomyData);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load news');
+        setError('Failed to load news data');
+        console.error('Error loading news:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    loadNews();
+    loadData();
   }, []);
 
   // Filter and sort news
   const filteredNews = useMemo(() => {
-    let filtered = news;
+    let filtered = news.filter(item => {
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch = 
+          item.title.toLowerCase().includes(searchLower) ||
+          item.summary.toLowerCase().includes(searchLower) ||
+          item.companies.some(c => c.toLowerCase().includes(searchLower)) ||
+          item.tags.some(t => t.toLowerCase().includes(searchLower));
+        if (!matchesSearch) return false;
+      }
 
-    // Apply type filter
-    if (filters.types.length > 0) {
-      filtered = filtered.filter(item => filters.types.includes(item.type));
-    }
+      // Topic filter
+      if (filters.topic && item.topic !== filters.topic) return false;
 
-    // Apply company filter
-    if (filters.companies.length > 0) {
-      filtered = filtered.filter(item => 
-        item.companies.some(company => filters.companies.includes(company))
-      );
-    }
+      // Type filter
+      if (filters.type && item.type !== filters.type) return false;
 
-    // Apply search filter
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.title.toLowerCase().includes(searchTerm) ||
-        item.excerpt.toLowerCase().includes(searchTerm) ||
-        item.source.toLowerCase().includes(searchTerm)
-      );
-    }
+      // Companies filter (any match)
+      if (filters.companies.length > 0) {
+        const hasMatchingCompany = filters.companies.some(company =>
+          item.companies.includes(company)
+        );
+        if (!hasMatchingCompany) return false;
+      }
 
-    // Sort by date (newest first)
-    return filtered.sort((a, b) => 
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
-    );
+      // Geography filter (any match)
+      if (filters.geography.length > 0) {
+        const hasMatchingGeo = filters.geography.some(geo =>
+          item.geography.includes(geo)
+        );
+        if (!hasMatchingGeo) return false;
+      }
+
+      // Tags filter (any match)
+      if (filters.tags.length > 0) {
+        const hasMatchingTag = filters.tags.some(tag =>
+          item.tags.includes(tag)
+        );
+        if (!hasMatchingTag) return false;
+      }
+
+      return true;
+    });
+
+    // Sort by date descending
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [news, filters]);
 
-  // Get available companies for filter
-  const availableCompanies = useMemo(() => {
-    const companies = new Set<string>();
-    news.forEach(item => {
-      item.companies.forEach(company => companies.add(company));
-    });
-    return Array.from(companies).sort();
-  }, [news]);
-
   const clearFilters = () => {
-    setFilters({ types: [], companies: [], search: '' });
+    setFilters({
+      topic: undefined,
+      companies: [],
+      geography: [],
+      tags: [],
+      type: undefined,
+      search: '',
+    });
   };
-
-  const hasActiveFilters = filters.types.length > 0 || filters.companies.length > 0 || filters.search.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-muted/30 to-background border-b">
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold tracking-tight mb-4">
-              AV News
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Stay updated with the latest autonomous vehicle news, launches, partnerships, and industry analysis.
-            </p>
-          </div>
+      <main className="container mx-auto px-4 py-8" style={{ paddingTop: 'calc(var(--header-h) + 2rem)' }}>
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">Autonomous Vehicle News</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Stay updated with the latest developments in autonomous vehicles, robotaxis, and self-driving technology
+          </p>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="sticky top-14 z-40">
-        <Filters
-          filters={filters}
-          onFiltersChange={setFilters}
-          availableCompanies={availableCompanies}
-        />
-      </div>
+        {/* Filters */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Filters</span>
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear All
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search articles..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="pl-8"
+              />
+            </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
-        {loading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-4">
-                <Skeleton className="aspect-[16/9] w-full rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-6 w-full" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Topic</label>
+                <CreatableSingle
+                  options={taxonomy.topic}
+                  value={filters.topic || ''}
+                  onChange={(value) => setFilters(prev => ({ ...prev, topic: value || undefined }))}
+                  placeholder="Select topic"
+                />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Type</label>
+                <CreatableSingle
+                  options={taxonomy.type}
+                  value={filters.type || ''}
+                  onChange={(value) => setFilters(prev => ({ ...prev, type: value || undefined }))}
+                  placeholder="Select type"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Companies</label>
+                <CreatableMulti
+                  options={taxonomy.companies}
+                  value={filters.companies}
+                  onChange={(values) => setFilters(prev => ({ ...prev, companies: values }))}
+                  placeholder="Select companies"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Geography</label>
+                <CreatableMulti
+                  options={taxonomy.geography}
+                  value={filters.geography}
+                  onChange={(values) => setFilters(prev => ({ ...prev, geography: values }))}
+                  placeholder="Select locations"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Tags</label>
+                <CreatableMulti
+                  options={taxonomy.tags}
+                  value={filters.tags}
+                  onChange={(values) => setFilters(prev => ({ ...prev, tags: values }))}
+                  placeholder="Select tags"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="space-y-4">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                  <Skeleton className="h-4 w-1/2 mb-4" />
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </CardContent>
+              </Card>
             ))}
           </div>
-        ) : error ? (
-          <div className="text-center py-16">
-            <p className="text-destructive mb-4">Error loading news: {error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="text-primary hover:underline"
-            >
-              Try again
-            </button>
-          </div>
-        ) : filteredNews.length === 0 ? (
-          <EmptyState 
-            onClearFilters={clearFilters}
-            hasActiveFilters={hasActiveFilters}
-          />
-        ) : (
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Alert>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Results */}
+        {!loading && !error && (
           <>
-            {/* Results summary */}
             <div className="mb-6">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground">
                 Showing {filteredNews.length} of {news.length} articles
-                {hasActiveFilters && " (filtered)"}
               </p>
             </div>
 
-            {/* News grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredNews.map((item) => (
-                <NewsCard key={item.id} item={item} />
-              ))}
-            </div>
+            {filteredNews.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <h3 className="text-lg font-medium mb-2">No articles found</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Try adjusting your filters or search terms
+                  </p>
+                  <Button variant="outline" onClick={clearFilters}>
+                    Clear Filters
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-6">
+                {filteredNews.map((item) => (
+                  <Card key={item.id} className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h2 className="text-xl font-semibold mb-2 line-clamp-2">
+                              {item.title}
+                            </h2>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {format(new Date(item.date), 'MMM d, yyyy')}
+                              </div>
+                            </div>
+                          </div>
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={item.url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Read
+                            </a>
+                          </Button>
+                        </div>
+
+                        {/* Summary */}
+                        {item.summary && (
+                          <p className="text-muted-foreground line-clamp-3">
+                            {item.summary}
+                          </p>
+                        )}
+
+                        {/* Tags */}
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="secondary">{item.topic}</Badge>
+                          <Badge variant="outline">{item.type}</Badge>
+                          
+                          {item.companies.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {item.companies.map(company => (
+                                <Badge key={company} variant="default" className="text-xs">
+                                  {company}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {item.geography.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {item.geography.map(geo => (
+                                <Badge key={geo} variant="secondary" className="text-xs">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  {geo}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {item.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {item.tags.map(tag => (
+                                <Badge key={tag} variant="outline" className="text-xs">
+                                  <Tag className="h-3 w-3 mr-1" />
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
-};
-
-export default News;
+}
