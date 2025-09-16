@@ -32,7 +32,7 @@ interface FiltersOverlayProps {
 }
 
 export function FiltersOverlay({ page, taxonomy, state, onChange, className }: FiltersOverlayProps) {
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
