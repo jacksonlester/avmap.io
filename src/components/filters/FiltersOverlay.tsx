@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Filter, X, RotateCcw, GripVertical, CheckSquare2 } from "lucide-react";
+import { Filter, X, RotateCcw, GripVertical } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
@@ -268,7 +268,7 @@ function FilterContent({
     <>
       {/* Companies */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs uppercase tracking-wide text-white/70">Companies</h3>
           <div className="flex gap-1">
             <Button
@@ -276,9 +276,8 @@ function FilterContent({
               size="sm"
               onClick={() => onSelectAll('companies')}
               className="h-5 px-1 text-xs text-white/60 hover:text-white"
-              title="Select all"
             >
-              <CheckSquare2 className="h-3 w-3" />
+              All
             </Button>
             <Button
               variant="ghost"
@@ -316,7 +315,7 @@ function FilterContent({
         <>
           <Separator className="bg-white/10" />
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs uppercase tracking-wide text-white/70">Status</h3>
               <div className="flex gap-1">
                 <Button
@@ -324,9 +323,8 @@ function FilterContent({
                   size="sm"
                   onClick={() => onSelectAll('statuses')}
                   className="h-5 px-1 text-xs text-white/60 hover:text-white"
-                  title="Select all"
                 >
-                  <CheckSquare2 className="h-3 w-3" />
+                  All
                 </Button>
                 <Button
                   variant="ghost"
