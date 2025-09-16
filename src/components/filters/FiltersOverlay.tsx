@@ -267,10 +267,10 @@ function FilterContent({
   return (
     <>
       {/* Companies */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs uppercase tracking-wide text-white/70">Companies</h3>
-          <div className="flex gap-1">
+      <div className="mt-3">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium uppercase tracking-wide text-white/70">Companies</span>
+          <div className="flex gap-2 text-xs">
             <Button
               variant="ghost"
               size="sm"
@@ -314,10 +314,10 @@ function FilterContent({
       {page === 'map' && statuses.length > 0 && (
         <>
           <Separator className="bg-white/10" />
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs uppercase tracking-wide text-white/70">Status</h3>
-              <div className="flex gap-1">
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-medium uppercase tracking-wide text-white/70">Status</span>
+              <div className="flex gap-2 text-xs">
                 <Button
                   variant="ghost"
                   size="sm"
