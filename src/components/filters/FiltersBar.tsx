@@ -1,11 +1,20 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { CreatableSingle, CreatableMulti } from "@/components/ui/creatable-select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  CreatableSingle,
+  CreatableMulti,
+} from "@/components/ui/creatable-select";
 import { Filter, X, RotateCcw, GripVertical, Search } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -18,7 +27,12 @@ interface FiltersBarProps {
   className?: string;
 }
 
-export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBarProps) {
+export function FiltersBar({
+  filters,
+  onChange,
+  taxonomy,
+  className,
+}: FiltersBarProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [isDragging, setIsDragging] = useState(false);
@@ -33,21 +47,21 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
       geography: [],
       tags: [],
       type: undefined,
-      search: '',
+      search: "",
     });
   };
 
   // Dragging functionality for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile || isMinimized) return;
-    
+
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
-    
+
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     });
   };
 
@@ -55,11 +69,21 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h') || '56');
-      
-      const newX = Math.max(0, Math.min(window.innerWidth - 340, e.clientX - dragOffset.x));
-      const newY = Math.max(headerHeight + 8, Math.min(window.innerHeight - 400, e.clientY - dragOffset.y));
-      
+      const headerHeight = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--header-h"
+        ) || "56"
+      );
+
+      const newX = Math.max(
+        0,
+        Math.min(window.innerWidth - 340, e.clientX - dragOffset.x)
+      );
+      const newY = Math.max(
+        headerHeight + 8,
+        Math.min(window.innerHeight - 400, e.clientY - dragOffset.y)
+      );
+
       setPosition({ x: newX, y: newY });
     };
 
@@ -67,12 +91,12 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, dragOffset]);
 
@@ -96,7 +120,7 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
             <SheetTitle>Filters</SheetTitle>
           </SheetHeader>
           <div className="p-4 space-y-6 max-h-[60vh] overflow-y-auto">
-            <NewsFilterContent 
+            <NewsFilterContent
               filters={filters}
               onChange={onChange}
               taxonomy={taxonomy}
@@ -114,9 +138,9 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
       <Button
         onClick={() => setIsMinimized(false)}
         className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-        style={{ 
-          left: `${position.x}px`, 
-          top: `calc(var(--header-h) + ${position.y}px)` 
+        style={{
+          left: `${position.x}px`,
+          top: `calc(var(--header-h) + ${position.y}px)`,
         }}
         title="Show filters"
       >
@@ -138,14 +162,14 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
         left: `${position.x}px`,
         top: `calc(var(--header-h) + ${position.y}px)`,
         width: "min(340px, 92vw)",
-        maxHeight: "60vh"
+        maxHeight: "60vh",
       }}
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-white flex items-center gap-2">
-            <GripVertical 
-              className="h-4 w-4 cursor-grab active:cursor-grabbing" 
+            <GripVertical
+              className="h-4 w-4 cursor-grab active:cursor-grabbing"
               onMouseDown={handleMouseDown}
             />
             Filters
@@ -171,9 +195,9 @@ export function FiltersBar({ filters, onChange, taxonomy, className }: FiltersBa
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pt-0 pb-3 space-y-4 overflow-y-auto max-h-[50vh]">
-        <NewsFilterContent 
+        <NewsFilterContent
           filters={filters}
           onChange={onChange}
           taxonomy={taxonomy}
@@ -191,7 +215,11 @@ interface NewsFilterContentProps {
   onReset: () => void;
 }
 
-function NewsFilterContent({ filters, onChange, taxonomy }: NewsFilterContentProps) {
+function NewsFilterContent({
+  filters,
+  onChange,
+  taxonomy,
+}: NewsFilterContentProps) {
   return (
     <>
       {/* Search */}
@@ -209,29 +237,39 @@ function NewsFilterContent({ filters, onChange, taxonomy }: NewsFilterContentPro
 
       {/* Topic */}
       <div>
-        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">Topic</Label>
+        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">
+          Topic
+        </Label>
         <CreatableSingle
           options={taxonomy.topic}
-          value={filters.topic || ''}
-          onChange={(value) => onChange({ ...filters, topic: value || undefined })}
+          value={filters.topic || ""}
+          onChange={(value) =>
+            onChange({ ...filters, topic: value || undefined })
+          }
           placeholder="Select topic"
         />
       </div>
 
       {/* Type */}
       <div>
-        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">Type</Label>
+        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">
+          Type
+        </Label>
         <CreatableSingle
           options={taxonomy.type}
-          value={filters.type || ''}
-          onChange={(value) => onChange({ ...filters, type: value || undefined })}
+          value={filters.type || ""}
+          onChange={(value) =>
+            onChange({ ...filters, type: value || undefined })
+          }
           placeholder="Select type"
         />
       </div>
 
       {/* Companies */}
       <div>
-        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">Companies</Label>
+        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">
+          Companies
+        </Label>
         <CreatableMulti
           options={taxonomy.companies}
           value={filters.companies}
@@ -242,7 +280,9 @@ function NewsFilterContent({ filters, onChange, taxonomy }: NewsFilterContentPro
 
       {/* Geography */}
       <div>
-        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">Geography</Label>
+        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">
+          Geography
+        </Label>
         <CreatableMulti
           options={taxonomy.geography}
           value={filters.geography}
@@ -253,7 +293,9 @@ function NewsFilterContent({ filters, onChange, taxonomy }: NewsFilterContentPro
 
       {/* Tags */}
       <div>
-        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">Tags</Label>
+        <Label className="text-xs uppercase tracking-wide text-white/70 mb-2 block">
+          Tags
+        </Label>
         <CreatableMulti
           options={taxonomy.tags}
           value={filters.tags}

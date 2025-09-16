@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Filter, X, RotateCcw, GripVertical } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -24,14 +30,20 @@ export type Taxonomy = {
 };
 
 interface FiltersOverlayProps {
-  page: 'map' | 'news' | 'cities' | 'companies';
+  page: "map" | "news" | "cities" | "companies";
   taxonomy: Taxonomy;
   state: FiltersState;
   onChange: (next: FiltersState) => void;
   className?: string;
 }
 
-export function FiltersOverlay({ page, taxonomy, state, onChange, className }: FiltersOverlayProps) {
+export function FiltersOverlay({
+  page,
+  taxonomy,
+  state,
+  onChange,
+  className,
+}: FiltersOverlayProps) {
   const [isMinimized, setIsMinimized] = useState(true);
   const [position, setPosition] = useState({ x: 16, y: 16 });
   const [isDragging, setIsDragging] = useState(false);
@@ -40,38 +52,37 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
   const isMobile = useIsMobile();
 
   // Get companies from map page or news taxonomy
-  const companies = page === 'map' 
-    ? ['Waymo', 'Tesla', 'Zoox', 'May Mobility']
-    : taxonomy.companies;
+  const companies =
+    page === "map"
+      ? ["Waymo", "Tesla", "Zoox", "May Mobility"]
+      : taxonomy.companies;
 
-  const statuses = page === 'map' 
-    ? ['Commercial', 'Testing', 'Pilot']
-    : [];
+  const statuses = page === "map" ? ["Commercial", "Testing", "Pilot"] : [];
 
   const handleCompanyChange = (company: string, checked: boolean) => {
-    const newCompanies = checked 
+    const newCompanies = checked
       ? [...state.companies, company]
-      : state.companies.filter(c => c !== company);
+      : state.companies.filter((c) => c !== company);
     onChange({ ...state, companies: newCompanies });
   };
 
   const handleStatusChange = (status: string, checked: boolean) => {
     const newStatuses = checked
-      ? [...state.statuses, status] 
-      : state.statuses.filter(s => s !== status);
+      ? [...state.statuses, status]
+      : state.statuses.filter((s) => s !== status);
     onChange({ ...state, statuses: newStatuses });
   };
 
-  const handleSelectAll = (type: 'companies' | 'statuses') => {
-    if (type === 'companies') {
+  const handleSelectAll = (type: "companies" | "statuses") => {
+    if (type === "companies") {
       onChange({ ...state, companies: [...companies] });
     } else {
       onChange({ ...state, statuses: [...statuses] });
     }
   };
 
-  const handleClearAll = (type: 'companies' | 'statuses') => {
-    if (type === 'companies') {
+  const handleClearAll = (type: "companies" | "statuses") => {
+    if (type === "companies") {
       onChange({ ...state, companies: [] });
     } else {
       onChange({ ...state, statuses: [] });
@@ -79,7 +90,7 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
   };
 
   const handleReset = () => {
-    if (page === 'map') {
+    if (page === "map") {
       onChange({ companies: [...companies], statuses: [...statuses] });
     } else {
       onChange({ companies: [], statuses: [] });
@@ -89,14 +100,14 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
   // Dragging functionality for desktop
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile || isMinimized) return;
-    
+
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
-    
+
     setIsDragging(true);
     setDragOffset({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     });
   };
 
@@ -104,11 +115,21 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h') || '56');
-      
-      const newX = Math.max(0, Math.min(window.innerWidth - 340, e.clientX - dragOffset.x));
-      const newY = Math.max(headerHeight + 8, Math.min(window.innerHeight - 400, e.clientY - dragOffset.y));
-      
+      const headerHeight = parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          "--header-h"
+        ) || "56"
+      );
+
+      const newX = Math.max(
+        0,
+        Math.min(window.innerWidth - 340, e.clientX - dragOffset.x)
+      );
+      const newY = Math.max(
+        headerHeight + 8,
+        Math.min(window.innerHeight - 400, e.clientY - dragOffset.y)
+      );
+
       setPosition({ x: newX, y: newY });
     };
 
@@ -116,12 +137,12 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, dragOffset]);
 
@@ -145,7 +166,7 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
             <SheetTitle>Filters</SheetTitle>
           </SheetHeader>
           <div className="p-4 space-y-6 max-h-[60vh] overflow-y-auto">
-            <FilterContent 
+            <FilterContent
               companies={companies}
               statuses={statuses}
               state={state}
@@ -168,9 +189,9 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
       <Button
         onClick={() => setIsMinimized(false)}
         className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-        style={{ 
-          left: `${position.x}px`, 
-          top: `calc(var(--header-h) + ${position.y}px)` 
+        style={{
+          left: `${position.x}px`,
+          top: `calc(var(--header-h) + ${position.y}px)`,
         }}
         title="Show filters"
       >
@@ -191,15 +212,15 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
       style={{
         left: `${position.x}px`,
         top: `calc(var(--header-h) + ${position.y}px)`,
-        width: "min(180px, 80vw)",
-        maxHeight: "60vh"
+        width: "min(210px, 80vw)",
+        maxHeight: "60vh",
       }}
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm text-white flex items-center gap-2">
-            <GripVertical 
-              className="h-4 w-4 cursor-grab active:cursor-grabbing" 
+            <GripVertical
+              className="h-4 w-4 cursor-grab active:cursor-grabbing"
               onMouseDown={handleMouseDown}
             />
             Filters
@@ -224,9 +245,9 @@ export function FiltersOverlay({ page, taxonomy, state, onChange, className }: F
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="pt-0 pb-3 space-y-4 overflow-y-auto max-h-[50vh]">
-        <FilterContent 
+        <FilterContent
           companies={companies}
           statuses={statuses}
           state={state}
@@ -248,33 +269,35 @@ interface FilterContentProps {
   state: FiltersState;
   onCompanyChange: (company: string, checked: boolean) => void;
   onStatusChange: (status: string, checked: boolean) => void;
-  onSelectAll: (type: 'companies' | 'statuses') => void;
-  onClearAll: (type: 'companies' | 'statuses') => void;
+  onSelectAll: (type: "companies" | "statuses") => void;
+  onClearAll: (type: "companies" | "statuses") => void;
   onReset: () => void;
   page: string;
 }
 
-function FilterContent({ 
-  companies, 
-  statuses, 
-  state, 
-  onCompanyChange, 
-  onStatusChange, 
-  onSelectAll, 
+function FilterContent({
+  companies,
+  statuses,
+  state,
+  onCompanyChange,
+  onStatusChange,
+  onSelectAll,
   onClearAll,
-  page 
+  page,
 }: FilterContentProps) {
   return (
     <>
       {/* Companies */}
       <div className="mt-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-medium uppercase tracking-wide text-white/70">Companies</span>
+          <span className="text-xs font-medium uppercase tracking-wide text-white/70">
+            Companies
+          </span>
           <div className="flex gap-2 text-xs">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onSelectAll('companies')}
+              onClick={() => onSelectAll("companies")}
               className="h-5 px-1 text-xs text-white/60 hover:text-white"
             >
               All
@@ -282,7 +305,7 @@ function FilterContent({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onClearAll('companies')}
+              onClick={() => onClearAll("companies")}
               className="h-5 px-1 text-xs text-white/60 hover:text-white"
             >
               Clear
@@ -299,7 +322,7 @@ function FilterContent({
               <Checkbox
                 id={`company-${company}`}
                 checked={state.companies.includes(company)}
-                onCheckedChange={(checked) => 
+                onCheckedChange={(checked) =>
                   onCompanyChange(company, checked as boolean)
                 }
                 className="border-white/30 data-[state=checked]:bg-white data-[state=checked]:text-black"
@@ -311,17 +334,19 @@ function FilterContent({
       </div>
 
       {/* Status (only for map page) */}
-      {page === 'map' && statuses.length > 0 && (
+      {page === "map" && statuses.length > 0 && (
         <>
           <Separator className="bg-white/10" />
           <div className="mt-3">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium uppercase tracking-wide text-white/70">Status</span>
+              <span className="text-xs font-medium uppercase tracking-wide text-white/70">
+                Status
+              </span>
               <div className="flex gap-2 text-xs">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onSelectAll('statuses')}
+                  onClick={() => onSelectAll("statuses")}
                   className="h-5 px-1 text-xs text-white/60 hover:text-white"
                 >
                   All
@@ -329,7 +354,7 @@ function FilterContent({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onClearAll('statuses')}
+                  onClick={() => onClearAll("statuses")}
                   className="h-5 px-1 text-xs text-white/60 hover:text-white"
                 >
                   Clear
@@ -346,7 +371,7 @@ function FilterContent({
                   <Checkbox
                     id={`status-${status}`}
                     checked={state.statuses.includes(status)}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       onStatusChange(status, checked as boolean)
                     }
                     className="border-white/30 data-[state=checked]:bg-white data-[state=checked]:text-black"

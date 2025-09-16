@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Map } from '@/components/Map';
@@ -67,6 +67,10 @@ const Index = () => {
     setFilters(newFilters);
   };
 
+  const handleZoomRequest = useCallback((type: 'company' | 'status', value: string) => {
+    window.dispatchEvent(new CustomEvent('avmap:zoom-filter', { detail: { type, value } }));
+  }, []);
+
   // PART 1: AUDIT - Log layout measurements
   useLayoutEffect(() => {
     const h = document.getElementById('app-header');
@@ -128,6 +132,7 @@ const Index = () => {
         taxonomy={taxonomy}
         state={filters}
         onChange={handleFiltersChange}
+        onZoomRequest={handleZoomRequest}
       />
 
       {/* Bottom Sheet */}
