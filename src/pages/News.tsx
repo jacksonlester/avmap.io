@@ -140,7 +140,7 @@ export default function News() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16">
       <Header />
       
       <main className="container mx-auto px-4 py-8" style={{ paddingTop: 'calc(var(--header-h) + 2rem)' }}>
