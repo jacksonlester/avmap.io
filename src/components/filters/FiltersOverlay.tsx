@@ -68,7 +68,7 @@ export function FiltersOverlay({
     companies: ["Waymo", "Tesla", "Zoox", "May Mobility"],
     platform: ["Waymo", "Uber", "Lyft", "Robotaxi", "Zoox"],
     supervision: ["Fully Autonomous", "Safety Driver", "Safety Attendant"],
-    access: ["Public", "Waitlist"],
+    access: ["Yes", "No"],
     fares: ["Yes", "No"],
     directBooking: ["Yes", "No"]
   } : {
@@ -228,7 +228,7 @@ export function FiltersOverlay({
     <Card
       ref={cardRef}
       className={cn(
-        "fixed z-[60] rounded-xl border border-white/20 bg-gradient-to-b from-black/60 to-black/80 text-white backdrop-blur-xl shadow-2xl pointer-events-auto",
+        "fixed z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-xl pointer-events-auto",
         isDragging && "cursor-grabbing",
         className
       )}
@@ -330,17 +330,17 @@ const FILTER_METADATA = {
     icon: Shield
   },
   access: {
-    label: "Access",
+    label: "Public\nAccess?",
     tooltip: "Who can ride the service",
     icon: Users
   },
   fares: {
-    label: "Fares",
+    label: "Charges\nFares?",
     tooltip: "Whether the service charges fares",
     icon: DollarSign
   },
   directBooking: {
-    label: "Direct",
+    label: "Direct\nBooking?",
     tooltip: "Whether riders can request an AV directly or only receive one by chance through a larger fleet",
     icon: MousePointer
   }
@@ -376,13 +376,10 @@ function FilterContent({
           <TooltipProvider delayDuration={100}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 cursor-help">
+                <div className="flex items-center gap-1.5">
                   <metadata.icon className="h-3 w-3 text-white/60" />
                   <span className="text-xs font-medium uppercase tracking-wide text-white/70">
                     {metadata.label}
-                  </span>
-                  <span className="text-xs text-white/50 bg-white/10 px-1.5 py-0.5 rounded-full">
-                    {(state[filterKey] as string[]).length}/{options.length}
                   </span>
                 </div>
               </TooltipTrigger>
@@ -478,16 +475,13 @@ function FilterContent({
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex flex-col items-center gap-1 cursor-help">
+                      <div className="flex flex-col items-center gap-1">
                         <div className="flex items-center gap-1">
                           <metadata.icon className="h-3 w-3 text-white/60" />
-                          <span className="text-xs font-medium uppercase tracking-wide text-white/70">
+                          <span className="text-xs font-medium uppercase tracking-wide text-white/70 text-center leading-tight whitespace-pre-line">
                             {metadata.label}
                           </span>
                         </div>
-                        <span className="text-xs text-white/50 bg-white/10 px-1.5 py-0.5 rounded-full">
-                          {(state[filterKey] as string[]).length}/{options.length}
-                        </span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="max-w-xs">

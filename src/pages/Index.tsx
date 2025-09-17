@@ -20,7 +20,7 @@ const Index = () => {
     companies: ['Waymo', 'Tesla', 'Zoox', 'May Mobility'],
     platform: ['Waymo', 'Uber', 'Lyft', 'Robotaxi', 'Zoox'],
     supervision: ['Fully Autonomous', 'Safety Driver', 'Safety Attendant'],
-    access: ['Public', 'Waitlist'],
+    access: ['Yes', 'No'],
     fares: ['Yes', 'No'],
     directBooking: ['Yes', 'No']
   });
@@ -31,7 +31,7 @@ const Index = () => {
     const allCompanies = ['Waymo', 'Tesla', 'Zoox', 'May Mobility'];
     const allPlatforms = ['Waymo', 'Uber', 'Lyft', 'Robotaxi', 'Zoox'];
     const allSupervision = ['Fully Autonomous', 'Safety Driver', 'Safety Attendant'];
-    const allAccess = ['Public', 'Waitlist'];
+    const allAccess = ['Yes', 'No'];
     const allFares = ['Yes', 'No'];
     const allDirectBooking = ['Yes', 'No'];
 
@@ -68,14 +68,16 @@ const Index = () => {
         const processedData = processHistoricalData(rawData);
         setHistoricalData(processedData);
 
-        // Set initial timeline date to today
-        setCurrentTimelineDate(new Date());
+        // Set initial timeline date to a known date with active service areas
+        // Use September 1, 2025 which should have active areas based on the data
+        setCurrentTimelineDate(new Date('2025-09-01'));
 
         console.log('Historical data loaded:', {
           rawDataKeys: Object.keys(rawData),
           processedDataKeys: Object.keys(processedData),
           totalAreas: Object.keys(processedData).length,
-          sampleArea: Object.values(processedData)[0]
+          sampleArea: Object.values(processedData)[0],
+          initialDate: new Date('2025-09-01')
         });
       } catch (error) {
         console.error('Failed to load historical service areas:', error);
@@ -134,12 +136,20 @@ const Index = () => {
   useEffect(() => {
     if (isTimelineMode) {
       console.log('Timeline mode active:', {
-        currentTimelineDate,
+        currentTimelineDate: currentTimelineDate.toISOString(),
         activeHistoricalAreas: activeHistoricalAreas.length,
-        activeAreas: activeHistoricalAreas.map(a => ({ id: a.id, effectiveDate: a.effectiveDate, company: a.company }))
+        activeAreas: activeHistoricalAreas.map(a => ({
+          id: a.id,
+          effectiveDate: a.effectiveDate,
+          endDate: a.endDate,
+          company: a.company,
+          name: a.name
+        })),
+        allHistoricalAreas: Object.keys(historicalData).length,
+        sampleHistoricalArea: Object.values(historicalData)[0]
       });
     }
-  }, [isTimelineMode, currentTimelineDate, activeHistoricalAreas]);
+  }, [isTimelineMode, currentTimelineDate, activeHistoricalAreas, historicalData]);
 
   // Get date range for timeline - override start date to Oct 8, 2020
   const dateRange = {
@@ -228,7 +238,6 @@ const Index = () => {
         taxonomy={taxonomy}
         state={filters}
         onChange={handleFiltersChange}
-        onZoomRequest={handleZoomRequest}
       />
 
       {/* Time Slider */}
@@ -248,6 +257,8 @@ const Index = () => {
         serviceArea={selectedArea}
         isOpen={!!selectedArea}
         onClose={handleCloseBottomSheet}
+        isTimelineMode={isTimelineMode}
+        timelineDate={currentTimelineDate}
       />
     </div>
   );

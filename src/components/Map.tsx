@@ -25,6 +25,13 @@ interface MapProps {
   className?: string;
 }
 
+// Helper function to convert Yes/No filters to actual data values
+const convertAccessFilter = (yesNoFilters: string[], actualValue: string) => {
+  if (yesNoFilters.length === 0) return true; // No filter applied
+  const isPublicAccess = actualValue === 'Public';
+  return (yesNoFilters.includes('Yes') && isPublicAccess) || (yesNoFilters.includes('No') && !isPublicAccess);
+};
+
 export function Map({
   serviceAreas,
   historicalServiceAreas = [],
@@ -60,7 +67,13 @@ export function Map({
       minZoom: 0,
       maxZoom: 18,
       projection: "mercator",
+      attributionControl: false, // Disable default attribution
     });
+
+    // Add attribution control in bottom-right corner
+    map.current.addControl(new mapboxgl.AttributionControl({
+      compact: true
+    }), 'bottom-right');
 
     // Remove any bounds restrictions by default
     map.current.setMaxBounds(null);
@@ -284,7 +297,20 @@ export function Map({
       if (features.length === 1) {
         // Single area - behave normally
         const featureId = features[0].source as string;
-        const clickedArea = serviceAreas.find((area) => area.id === featureId);
+
+        // Look in current service areas first, then historical areas
+        let clickedArea = serviceAreas.find((area) => area.id === featureId);
+
+        // If not found in current areas and we're in timeline mode, check historical areas
+        if (!clickedArea && isTimelineMode) {
+          const historicalArea = historicalServiceAreas.find((area) => area.id === featureId);
+          if (historicalArea) {
+            clickedArea = {
+              ...historicalArea,
+              lastUpdated: historicalArea.lastUpdated || historicalArea.effectiveDate
+            } as ServiceArea;
+          }
+        }
 
         if (clickedArea) {
           const bounds = new mapboxgl.LngLatBounds();
@@ -302,9 +328,20 @@ export function Map({
       } else if (features.length <= 5) {
         // Multiple areas - show service selector in popup
         const overlappingAreas = features
-          .map((feature) =>
-            serviceAreas.find((area) => area.id === feature.source)
-          )
+          .map((feature) => {
+            let area = serviceAreas.find((serviceArea) => serviceArea.id === feature.source);
+            // If not found in current areas and we're in timeline mode, check historical areas
+            if (!area && isTimelineMode) {
+              const historicalArea = historicalServiceAreas.find((historicalArea) => historicalArea.id === feature.source);
+              if (historicalArea) {
+                area = {
+                  ...historicalArea,
+                  lastUpdated: historicalArea.lastUpdated || historicalArea.effectiveDate
+                } as ServiceArea;
+              }
+            }
+            return area;
+          })
           .filter((area): area is ServiceArea => area !== undefined);
 
         // Create popup container
@@ -366,7 +403,7 @@ export function Map({
         );
       }
     });
-  }, [serviceAreas, loadedAreas, onServiceAreaClick]);
+  }, [serviceAreas, historicalServiceAreas, loadedAreas, onServiceAreaClick, isTimelineMode]);
 
   // Load historical service areas (always load them, control visibility separately)
   useEffect(() => {
@@ -473,7 +510,7 @@ export function Map({
       const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
       const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
       const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
-      const accessMatch = filters.access.length === 0 || filters.access.includes(area.access || 'Public');
+      const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
       const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
       const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
 
@@ -517,7 +554,7 @@ export function Map({
         const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
         const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
         const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
-        const accessMatch = filters.access.length === 0 || filters.access.includes(area.access || 'Public');
+        const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
         const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
         const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
 
@@ -550,10 +587,13 @@ export function Map({
     const currentMap = map.current;
 
     // Enable transitions for smooth morphing
-    currentMap.setTransition({
-      duration: 300,
-      delay: 0
-    });
+    // Note: setTransition method may not be available in all mapbox versions
+    if ('setTransition' in currentMap) {
+      (currentMap as unknown as { setTransition: (options: { duration: number; delay: number }) => void }).setTransition({
+        duration: 300,
+        delay: 0
+      });
+    }
 
     deploymentTransitions.forEach((activeArea, deploymentId) => {
       const sourceId = `deployment-${deploymentId}`;
@@ -565,7 +605,7 @@ export function Map({
         const companyMatch = filters.companies.length === 0 || filters.companies.includes(activeArea.company);
         const platformMatch = !activeArea.platform || filters.platform.length === 0 || filters.platform.includes(activeArea.platform);
         const supervisionMatch = !activeArea.supervision || filters.supervision.length === 0 || filters.supervision.includes(activeArea.supervision);
-        const accessMatch = !activeArea.access || filters.access.length === 0 || filters.access.includes(activeArea.access);
+        const accessMatch = !activeArea.access || convertAccessFilter(filters.access, activeArea.access);
         const faresMatch = !activeArea.fares || filters.fares.length === 0 || filters.fares.includes(activeArea.fares);
         const directBookingMatch = !activeArea.directBooking || filters.directBooking.length === 0 || filters.directBooking.includes(activeArea.directBooking);
 

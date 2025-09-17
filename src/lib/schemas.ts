@@ -107,7 +107,7 @@ export type FormActionResult = {
   success: boolean;
   message?: string;
   errors?: Record<string, string[]>;
-  data?: any;
+  data?: unknown;
 };
 
 export type LoginResult = FormActionResult & {
@@ -115,6 +115,6 @@ export type LoginResult = FormActionResult & {
 };
 
 export type EntitySaveResult = FormActionResult & {
-  entity?: any;
+  entity?: unknown;
   version?: string;
 };

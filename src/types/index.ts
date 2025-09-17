@@ -4,10 +4,10 @@ export interface ServiceArea {
   company: string;
   platform: string;
   access: 'Public' | 'Waitlist';
-  supervision: 'Autonomous' | 'Safety Driver' | 'Safety Attendant';
+  supervision: 'Fully Autonomous' | 'Safety Driver' | 'Safety Attendant';
   fares: 'Yes' | 'No';
   directBooking: 'Yes' | 'No';
-  status: 'Active' | 'Deprecated';
+  status: 'Active' | 'Testing' | 'Deprecated';
   geojsonPath: string;
   lastUpdated: string;
 }
@@ -22,11 +22,12 @@ export interface HistoricalServiceArea {
   company: string;
   platform: string;
   access: 'Public' | 'Waitlist';
-  supervision: 'Autonomous' | 'Safety Driver' | 'Safety Attendant';
+  supervision: 'Fully Autonomous' | 'Safety Driver' | 'Safety Attendant';
   fares: 'Yes' | 'No';
   directBooking: 'Yes' | 'No';
-  status: 'Active' | 'Deprecated';
+  status: 'Active' | 'Testing' | 'Deprecated';
   geojsonPath: string;
+  lastUpdated?: string;
   geojson?: {
     type: 'FeatureCollection';
     features: Array<{

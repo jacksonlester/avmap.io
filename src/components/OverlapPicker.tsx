@@ -63,7 +63,7 @@ export function OverlapPicker({
                       {area.company} – {area.name}
                     </div>
                     <Badge 
-                      variant={area.status === 'Commercial' ? 'default' : 'secondary'}
+                      variant={area.status === 'Active' ? 'default' : 'secondary'}
                       className="text-xs mt-1"
                     >
                       {area.status}

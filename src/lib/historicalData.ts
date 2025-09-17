@@ -72,11 +72,11 @@ export function processHistoricalData(data: HistoricalServiceAreaData): Historic
     processed[key] = {
       ...serviceArea,
       company,
-      platform,
-      supervision,
-      access,
-      fares,
-      directBooking,
+      platform: platform as any,
+      supervision: supervision as any,
+      access: access as any,
+      fares: fares as any,
+      directBooking: directBooking as any,
       status: serviceArea.status || 'Testing',
     };
   });

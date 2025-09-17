@@ -11,8 +11,8 @@ import { X, GripVertical } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-// Calendar icon component - simple calendar design
-const CalendarIcon = ({ className }: { className?: string }) => (
+// Change date icon component - calendar with circular refresh arrows
+const ChangeDateIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -22,10 +22,23 @@ const CalendarIcon = ({ className }: { className?: string }) => (
     strokeLinejoin="round"
     className={className}
   >
+    {/* Calendar base */}
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
     <line x1="16" y1="2" x2="16" y2="6"/>
     <line x1="8" y1="2" x2="8" y2="6"/>
     <line x1="3" y1="10" x2="21" y2="10"/>
+    {/* Calendar grid dots */}
+    <circle cx="8" cy="14" r="0.5" fill="currentColor"/>
+    <circle cx="12" cy="14" r="0.5" fill="currentColor"/>
+    <circle cx="16" cy="14" r="0.5" fill="currentColor"/>
+    <circle cx="8" cy="18" r="0.5" fill="currentColor"/>
+    <circle cx="12" cy="18" r="0.5" fill="currentColor"/>
+    <circle cx="16" cy="18" r="0.5" fill="currentColor"/>
+    {/* Circular refresh arrows around calendar */}
+    <path d="M1 12a11 11 0 0 1 18-8.5" strokeWidth="1.5"/>
+    <path d="M23 12a11 11 0 0 1-18 8.5" strokeWidth="1.5"/>
+    <polyline points="15,2 19,3.5 17.5,7.5" strokeWidth="1.5" fill="currentColor"/>
+    <polyline points="9,22 5,20.5 6.5,16.5" strokeWidth="1.5" fill="currentColor"/>
   </svg>
 );
 
@@ -88,7 +101,7 @@ export function TimeSlider({
       );
       const newY = Math.max(
         24,
-        Math.min(window.innerHeight - 100, e.clientY - dragOffset.y)
+        Math.min(window.innerHeight - 100, window.innerHeight - (e.clientY - dragOffset.y))
       );
 
       setPosition({ x: newX, y: newY });
@@ -113,10 +126,10 @@ export function TimeSlider({
       <Sheet>
         <SheetTrigger asChild>
           <Button
-            className="fixed bottom-4 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
+            className="fixed bottom-3 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
             title="Show timeline"
           >
-            <CalendarIcon className="h-5 w-5" />
+            <ChangeDateIcon className="h-5 w-5" />
           </Button>
         </SheetTrigger>
         <SheetContent side="bottom" className="h-32 p-0">
@@ -177,10 +190,10 @@ export function TimeSlider({
             onTimelineModeChange(true);
           }
         }}
-        className="fixed bottom-4 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
+        className="fixed bottom-3 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
         title="Show timeline"
       >
-        <CalendarIcon className="h-5 w-5" />
+        <ChangeDateIcon className="h-5 w-5" />
       </Button>
     );
   }

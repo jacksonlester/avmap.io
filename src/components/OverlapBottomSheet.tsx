@@ -49,7 +49,7 @@ export function OverlapBottomSheet({
                     {area.company} – {area.name}
                   </div>
                   <Badge 
-                    variant={area.status === 'Commercial' ? 'default' : 'secondary'}
+                    variant={area.status === 'Active' ? 'default' : 'secondary'}
                     className="mt-1"
                   >
                     {area.status}
