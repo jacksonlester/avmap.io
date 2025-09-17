@@ -70,6 +70,7 @@
     --sidebar-border: 220 20% 80%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
   }
 
   .dark {
@@ -141,4 +142,19 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Mapbox logo placement */
+.mapboxgl-ctrl-bottom-left {
+  left: auto !important;
+  right: 16px;
+  bottom: 16px;
+}
+
+.mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
+  margin: 0;
+}
+
+.mapboxgl-ctrl-logo {
+  left: auto !important;
 }

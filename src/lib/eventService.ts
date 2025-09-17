@@ -86,7 +86,7 @@ export async function getAllServicesAtDate(date: Date) {
       const { isActive, geometry_name, ...serviceData } = service
       return {
         ...serviceData,
-        geometryName: geometry_name // Map geometry_name to geometryName for frontend compatibility
+        geojsonPath: geometry_name // Map geometry_name to geojsonPath for frontend compatibility
       }
     })
 }
@@ -228,12 +228,12 @@ export async function getAllHistoricalServiceStates() {
     }
   }
 
-  // Return all unique states with geometry name mapped to geometryName
+  // Return all unique states with geometry name mapped to geojsonPath
   return Array.from(allStates.values()).map(state => {
     const { geometry_name, ...stateData } = state
     return {
       ...stateData,
-      geometryName: geometry_name
+      geojsonPath: geometry_name
     }
   })
 }

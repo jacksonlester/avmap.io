@@ -176,15 +176,24 @@ export function FiltersOverlay({
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="fixed left-4 z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60"
-            style={{ top: "calc(var(--header-h) + 12px)" }}
-          >
-            <Filter className="h-4 w-4 mr-2" />
-            Filters
-          </Button>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="fixed left-4 z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60"
+                  style={{ top: "calc(var(--header-h) + 12px)" }}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Open Filters</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </SheetTrigger>
         <SheetContent side="left" className="w-80 p-0">
           <SheetHeader className="p-4 border-b">
@@ -209,17 +218,25 @@ export function FiltersOverlay({
   // Minimized FAB
   if (isMinimized) {
     return (
-      <Button
-        onClick={() => setIsMinimized(false)}
-        className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-        style={{
-          left: `${position.x}px`,
-          top: `calc(var(--header-h) + ${position.y}px)`,
-        }}
-        title="Show filters"
-      >
-        <Filter className="h-5 w-5" />
-      </Button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={() => setIsMinimized(false)}
+              className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
+              style={{
+                left: `${position.x}px`,
+                top: `calc(var(--header-h) + ${position.y}px)`,
+              }}
+            >
+              <Filter className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Open Filters</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 

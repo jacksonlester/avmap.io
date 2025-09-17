@@ -7,39 +7,19 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { X, GripVertical } from "lucide-react";
+import { X, GripVertical, History } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-// Change date icon component - calendar with circular refresh arrows
+// Use Lucide History icon to match design language of Filter icon
 const ChangeDateIcon = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    {/* Calendar base */}
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/>
-    <line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/>
-    {/* Calendar grid dots */}
-    <circle cx="8" cy="14" r="0.5" fill="currentColor"/>
-    <circle cx="12" cy="14" r="0.5" fill="currentColor"/>
-    <circle cx="16" cy="14" r="0.5" fill="currentColor"/>
-    <circle cx="8" cy="18" r="0.5" fill="currentColor"/>
-    <circle cx="12" cy="18" r="0.5" fill="currentColor"/>
-    <circle cx="16" cy="18" r="0.5" fill="currentColor"/>
-    {/* Circular refresh arrows around calendar */}
-    <path d="M1 12a11 11 0 0 1 18-8.5" strokeWidth="1.5"/>
-    <path d="M23 12a11 11 0 0 1-18 8.5" strokeWidth="1.5"/>
-    <polyline points="15,2 19,3.5 17.5,7.5" strokeWidth="1.5" fill="currentColor"/>
-    <polyline points="9,22 5,20.5 6.5,16.5" strokeWidth="1.5" fill="currentColor"/>
-  </svg>
+  <History className={className} />
 );
 
 interface TimeSliderProps {
@@ -62,12 +42,11 @@ export function TimeSlider({
   className,
 }: TimeSliderProps) {
   const [isMinimized, setIsMinimized] = useState(true);
-  const [position, setPosition] = useState({ x: 16, y: 24 });
+  const [position, setPosition] = useState({ x: 76, y: 28 }); // Position to the right of button (16px left + 48px button + 12px gap)
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
-
   // Convert dates to slider values (0-100)
   const totalDuration = endDate.getTime() - startDate.getTime();
   const currentProgress = ((currentDate.getTime() - startDate.getTime()) / totalDuration) * 100;
@@ -125,13 +104,22 @@ export function TimeSlider({
     return (
       <Sheet>
         <SheetTrigger asChild>
-          <Button
-            data-timeline-container
-            className="fixed bottom-3 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-            title="Show timeline"
-          >
-            <ChangeDateIcon className="h-5 w-5" />
-          </Button>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-timeline-container
+                  className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
+                  style={{ left: "16px", bottom: "73px" }}
+                >
+                  <ChangeDateIcon className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Open Timeline</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </SheetTrigger>
         <SheetContent side="bottom" className="h-32 p-0">
           <div className="p-4">
@@ -184,19 +172,28 @@ export function TimeSlider({
   // Minimized FAB - positioned at bottom left, styled like filter button
   if (isMinimized) {
     return (
-      <Button
-        data-timeline-container
-        onClick={() => {
-          setIsMinimized(false);
-          if (onTimelineModeChange && !isTimelineMode) {
-            onTimelineModeChange(true);
-          }
-        }}
-        className="fixed bottom-3 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-        title="Show timeline"
-      >
-        <ChangeDateIcon className="h-5 w-5" />
-      </Button>
+      <TooltipProvider delayDuration={300}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              data-timeline-container
+              onClick={() => {
+                setIsMinimized(false);
+                if (onTimelineModeChange && !isTimelineMode) {
+                  onTimelineModeChange(true);
+                }
+              }}
+              className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
+              style={{ left: "16px", bottom: "73px" }}
+            >
+              <ChangeDateIcon className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <p>Open Timeline</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
@@ -212,7 +209,7 @@ export function TimeSlider({
       )}
       style={{
         left: `${position.x}px`,
-        bottom: `${position.y}px`,
+        bottom: `${120}px`, // Higher up on the page - about 120px from bottom
         width: "min(600px, 90vw)",
         height: "auto",
       }}

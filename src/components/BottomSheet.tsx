@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ServiceArea, COMPANY_COLORS, HistoricalServiceArea } from "@/types";
+import { ServiceArea, COMPANY_COLORS, HistoricalServiceArea, SERVICE_LINKS, ServiceLink } from "@/types";
 import { XIcon, ExternalLinkIcon, Building2, Smartphone, Shield, Users, DollarSign, MousePointer, Car } from "lucide-react";
 import {
   Tooltip,
@@ -106,44 +105,54 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
       return;
     }
 
-    // Debounce historical data fetching to prevent rapid re-renders during scrubbing
-    const timeoutId = setTimeout(() => {
-      // Look up the historical state for this service at the timeline date
-      const getHistoricalState = async () => {
-        setIsLoadingHistoricalData(true);
-        try {
-          const { getAllServicesAtDate } = await import('@/lib/eventService');
-          const historicalServices = await getAllServicesAtDate(timelineDate);
+    // Look up the historical state for this service at the timeline date
+    const getHistoricalState = async () => {
+      setIsLoadingHistoricalData(true);
+      try {
+        const { getAllServicesAtDate } = await import('@/lib/eventService');
+        const historicalServices = await getAllServicesAtDate(timelineDate);
 
-          // Find the service that matches the clicked area
-          const historicalService = historicalServices.find(service =>
-            service.company === serviceArea.company && service.name === serviceArea.name
-          );
+        // Find the service that matches the clicked area
+        const historicalService = historicalServices.find(service =>
+          service.company === serviceArea.company && service.name === serviceArea.name
+        );
 
-          setHistoricallyAccurateArea(historicalService || null);
-        } catch (error) {
-          console.error('Error getting historical service state:', error);
-          setHistoricallyAccurateArea(serviceArea);
-        } finally {
-          setIsLoadingHistoricalData(false);
-        }
-      };
+        console.log('Historical service found:', historicalService);
+        console.log('Timeline date:', timelineDate);
+        console.log('Service area:', serviceArea);
 
-      getHistoricalState();
-    }, 150); // 150ms debounce - fast enough to feel responsive but prevents rapid updates
+        // If no historical service exists at this date, set to null to show N/A
+        setHistoricallyAccurateArea(historicalService || null);
+      } catch (error) {
+        console.error('Error getting historical service state:', error);
+        setHistoricallyAccurateArea(serviceArea);
+      } finally {
+        setIsLoadingHistoricalData(false);
+      }
+    };
 
-    return () => clearTimeout(timeoutId);
+    getHistoricalState();
   }, [isTimelineMode, timelineDate, serviceArea]);
 
   if (!isOpen || !serviceArea) return null;
 
   const companyConfig = COMPANY_COLORS[serviceArea.company];
 
+  // Get static links for this service (doesn't change with timeline)
+  const getServiceLinks = (): ServiceLink[] => {
+    const linkKey = `${serviceArea.company} ${serviceArea.name}`;
+    console.log('Looking for links with key:', linkKey);
+    console.log('Available keys:', Object.keys(SERVICE_LINKS));
+    const links = SERVICE_LINKS[linkKey] || [];
+    console.log('Found links:', links);
+    return links;
+  };
+
+  const serviceLinks = getServiceLinks();
+
   // Format the title based on timeline mode
   const getTitle = () => {
-    const dateText = isTimelineMode && timelineDate
-      ? `as of ${timelineDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-      : 'now';
+    const dateText = isTimelineMode ? 'as of Today' : 'as of Today';
     return `${serviceArea.company} ${serviceArea.name} Service ${dateText}`;
   };
 
@@ -169,7 +178,7 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
 
   return (
     <TooltipProvider>
-      <div className="fixed inset-x-0 bottom-0 z-50 mx-4 mb-4 md:mx-auto md:max-w-lg">
+      <div data-bottom-sheet className="fixed bottom-0 right-0 z-50 mr-4 mb-4 max-w-lg w-full md:w-auto">
         <Card
           ref={cardRef}
           className="shadow-xl border border-white/10 bg-black/50 text-white backdrop-blur-md"
@@ -184,7 +193,12 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
                 {getTitle()}
               </CardTitle>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose} className="text-white/70 hover:text-white hover:bg-white/10">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            >
               <XIcon className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -226,16 +240,37 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
               value={getFieldValue('directBooking', 'Yes')}
             />
 
-            {/* Status Badge */}
-            <div className="flex items-center gap-2 pt-2 border-t border-white/10">
-              <span className="text-xs text-white/70 uppercase tracking-wide">Status:</span>
-              <Badge
-                variant={getFieldValue('status', 'N/A') === 'Active' ? 'default' : 'secondary'}
-                className="text-xs bg-white/20 text-white border-white/30"
-              >
-                {getFieldValue('status', 'N/A')}
-              </Badge>
-            </div>
+            {/* Service Links - Static, don't change with timeline */}
+            {serviceLinks.length > 0 && (
+              <div className="pt-4 mt-4 border-t border-white/10">
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs text-white/70 uppercase tracking-wide font-medium mb-1">
+                    Quick Links
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    {serviceLinks.map((link, index) => (
+                      <Button
+                        key={index}
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-9 justify-start bg-white/5 border-white/20 text-white hover:bg-white/10 hover:border-white/30 transition-colors"
+                      >
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 w-full"
+                        >
+                          <ExternalLinkIcon className="h-3.5 w-3.5" />
+                          <span className="text-sm font-medium">{link.label}</span>
+                        </a>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

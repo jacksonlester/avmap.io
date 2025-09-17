@@ -14,7 +14,7 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
-  const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(new Date('2025-09-01'));
+  const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(new Date());
   const [isTimelineMode, setIsTimelineMode] = useState(false);
   const [taxonomy] = useState<Taxonomy>({
     companies: ['Waymo', 'Tesla', 'Zoox', 'May Mobility'],
@@ -51,6 +51,8 @@ const Index = () => {
       try {
         const services = await getCurrentServiceAreas();
         console.log('Loaded current services from Supabase:', services.length, services);
+        console.log('Service areas with geojsonPath:', services.filter(s => s.geojsonPath).length);
+        console.log('Service areas without geojsonPath:', services.filter(s => !s.geojsonPath).map(s => ({ id: s.id, name: s.name, geojsonPath: s.geojsonPath })));
         setServiceAreas(services);
       } catch (error) {
         console.error('Failed to load current service areas:', error);
@@ -66,6 +68,8 @@ const Index = () => {
         console.log('Loading all historical service states for preloading...');
         const allStates = await getAllHistoricalServiceStates();
         console.log('Loaded all historical states:', allStates.length, allStates);
+        console.log('Historical areas with geojsonPath:', allStates.filter(s => s.geojsonPath).length);
+        console.log('Historical areas without geojsonPath:', allStates.filter(s => !s.geojsonPath).map(s => ({ id: s.id, name: s.name, geojsonPath: s.geojsonPath })));
         setAllHistoricalAreas(allStates as HistoricalServiceArea[]);
       } catch (error) {
         console.error('Failed to load all historical service states:', error);
@@ -83,6 +87,8 @@ const Index = () => {
     const loadHistoricalAreas = async () => {
       try {
         const services = await getAllServicesAtDate(currentTimelineDate);
+        console.log('Timeline date services:', services.length, services);
+        console.log('Timeline services with geojsonPath:', services.filter(s => s.geojsonPath).length);
         setActiveHistoricalAreas(services as HistoricalServiceArea[]);
       } catch (error) {
         console.error('Failed to load historical service areas:', error);
@@ -168,7 +174,13 @@ const Index = () => {
 
   // Timeline handlers
   const handleTimelineToggle = () => {
-    setIsTimelineMode(!isTimelineMode);
+    const newTimelineMode = !isTimelineMode;
+    setIsTimelineMode(newTimelineMode);
+
+    // When closing timeline mode, reset to today
+    if (!newTimelineMode) {
+      setCurrentTimelineDate(new Date());
+    }
   };
 
   const handleTimelineDateChange = (date: Date) => {
@@ -227,14 +239,7 @@ const Index = () => {
             historicalServiceAreas={activeHistoricalAreas}
             allHistoricalServiceAreas={allHistoricalAreas}
             deploymentTransitions={deploymentTransitions}
-            filters={{
-              companies: filters.companies,
-              platform: filters.platform,
-              supervision: filters.supervision,
-              access: filters.access,
-              fares: filters.fares,
-              directBooking: filters.directBooking
-            }}
+            filters={filters}
             isTimelineMode={isTimelineMode}
             onServiceAreaClick={handleServiceAreaClick}
             className="w-full h-full"
