@@ -123,7 +123,7 @@ const Index = () => {
     setSearchParams(newParams);
   }, [filters, setSearchParams]);
 
-  const handleServiceAreaClick = (area: ServiceArea) => {
+  const handleServiceAreaClick = (area: ServiceArea | null) => {
     setSelectedArea(area);
   };
 
@@ -241,6 +241,7 @@ const Index = () => {
             deploymentTransitions={deploymentTransitions}
             filters={filters}
             isTimelineMode={isTimelineMode}
+            selectedArea={selectedArea}
             onServiceAreaClick={handleServiceAreaClick}
             className="w-full h-full"
           />

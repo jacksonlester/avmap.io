@@ -59,41 +59,68 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
   const [historicallyAccurateArea, setHistoricallyAccurateArea] = useState<ServiceArea | HistoricalServiceArea | null>(serviceArea);
   const [isLoadingHistoricalData, setIsLoadingHistoricalData] = useState(false);
 
-  // Handle click outside to close
+  // Handle click outside to close (but not drag)
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
+    let mouseDownPosition: { x: number; y: number } | null = null;
+    const DRAG_THRESHOLD = 5; // pixels
 
-      // Don't close if clicking on the BottomSheet itself
-      if (cardRef.current && cardRef.current.contains(target)) {
-        return;
+    const handleMouseDown = (event: MouseEvent) => {
+      mouseDownPosition = { x: event.clientX, y: event.clientY };
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (!mouseDownPosition) return;
+
+      // Calculate distance moved
+      const deltaX = Math.abs(event.clientX - mouseDownPosition.x);
+      const deltaY = Math.abs(event.clientY - mouseDownPosition.y);
+      const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      // Only close if it was a click (not a drag)
+      if (totalDistance <= DRAG_THRESHOLD) {
+        const target = event.target as Node;
+
+        // Don't close if clicking on the BottomSheet itself
+        if (cardRef.current && cardRef.current.contains(target)) {
+          return;
+        }
+
+        // Don't close if clicking on timeline controls
+        const timelineContainer = document.querySelector('[data-timeline-container]');
+        if (timelineContainer && timelineContainer.contains(target)) {
+          return;
+        }
+
+        // Don't close if clicking on filters overlay
+        const filtersOverlay = document.getElementById('filters-overlay');
+        if (filtersOverlay && filtersOverlay.contains(target)) {
+          return;
+        }
+
+        // Don't close if clicking on service selector popup
+        const serviceSelector = document.querySelector('.mapboxgl-popup');
+        if (serviceSelector && serviceSelector.contains(target)) {
+          return;
+        }
+
+        onClose();
       }
 
-      // Don't close if clicking on timeline controls
-      const timelineContainer = document.querySelector('[data-timeline-container]');
-      if (timelineContainer && timelineContainer.contains(target)) {
-        return;
-      }
-
-      // Don't close if clicking on filters overlay
-      const filtersOverlay = document.getElementById('filters-overlay');
-      if (filtersOverlay && filtersOverlay.contains(target)) {
-        return;
-      }
-
-      onClose();
+      mouseDownPosition = null;
     };
 
     // Add delay to prevent immediate closure when opening
     const timeoutId = setTimeout(() => {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleMouseDown);
+      document.addEventListener('mouseup', handleMouseUp);
     }, 100);
 
     return () => {
       clearTimeout(timeoutId);
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isOpen, onClose]);
 
@@ -152,7 +179,24 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
 
   // Format the title based on timeline mode
   const getTitle = () => {
-    const dateText = isTimelineMode ? 'as of Today' : 'as of Today';
+    let dateText = 'as of Today';
+
+    if (isTimelineMode && timelineDate) {
+      // Check if timeline date is today
+      const today = new Date();
+      const isToday = timelineDate.toDateString() === today.toDateString();
+
+      if (isToday) {
+        dateText = 'as of Today';
+      } else {
+        dateText = `as of ${timelineDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })}`;
+      }
+    }
+
     return `${serviceArea.company} ${serviceArea.name} Service ${dateText}`;
   };
 
@@ -178,7 +222,7 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
 
   return (
     <TooltipProvider>
-      <div data-bottom-sheet className="fixed bottom-0 right-0 z-50 mr-4 mb-4 max-w-lg w-full md:w-auto">
+      <div data-bottom-sheet className="fixed bottom-0 right-0 z-50 mr-4 mb-4 w-full max-w-lg md:w-[28rem]">
         <Card
           ref={cardRef}
           className="shadow-xl border border-white/10 bg-black/50 text-white backdrop-blur-md"

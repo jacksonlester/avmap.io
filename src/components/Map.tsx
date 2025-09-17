@@ -44,7 +44,8 @@ interface MapProps {
   deploymentTransitions?: Map<string, HistoricalServiceArea | null>;
   filters: MapFilters;
   isTimelineMode?: boolean;
-  onServiceAreaClick: (serviceArea: ServiceArea) => void;
+  selectedArea?: ServiceArea | null; // Currently selected area for focus mode
+  onServiceAreaClick: (serviceArea: ServiceArea | null) => void;
   className?: string;
 }
 
@@ -55,6 +56,66 @@ const convertAccessFilter = (yesNoFilters: string[], actualValue: string) => {
   return (yesNoFilters.includes('Yes') && isPublicAccess) || (yesNoFilters.includes('No') && !isPublicAccess);
 };
 
+// Helper function to calculate bounds from any GeoJSON geometry
+const calculateGeometryBounds = (geometry: GeoJSON.Geometry): mapboxgl.LngLatBounds => {
+  const bounds = new mapboxgl.LngLatBounds();
+
+  const addCoordinatesToBounds = (coords: unknown) => {
+    if (Array.isArray(coords) && coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      // This is a coordinate pair [lng, lat]
+      bounds.extend(coords as [number, number]);
+    } else if (Array.isArray(coords)) {
+      // This is an array of coordinates or coordinate arrays
+      coords.forEach(coord => addCoordinatesToBounds(coord));
+    }
+  };
+
+  // Handle different geometry types
+  switch (geometry.type) {
+    case 'Point':
+      bounds.extend(geometry.coordinates as [number, number]);
+      break;
+    case 'LineString':
+    case 'MultiPoint':
+      addCoordinatesToBounds(geometry.coordinates);
+      break;
+    case 'Polygon':
+    case 'MultiLineString':
+      addCoordinatesToBounds(geometry.coordinates);
+      break;
+    case 'MultiPolygon':
+      addCoordinatesToBounds(geometry.coordinates);
+      break;
+    case 'GeometryCollection':
+      geometry.geometries.forEach(geom => {
+        const geomBounds = calculateGeometryBounds(geom);
+        bounds.extend(geomBounds.getNorthEast());
+        bounds.extend(geomBounds.getSouthWest());
+      });
+      break;
+  }
+
+  return bounds;
+};
+
+// Helper function to fit bounds with responsive padding
+const fitBoundsWithResponsivePadding = (map: mapboxgl.Map, bounds: mapboxgl.LngLatBounds) => {
+  const container = map.getContainer();
+  const containerWidth = container.clientWidth;
+  const containerHeight = container.clientHeight;
+
+  // Calculate responsive padding based on screen size
+  const basePadding = Math.min(containerWidth, containerHeight) * 0.1; // 10% of smaller dimension
+  const minPadding = 20;
+  const maxPadding = 100;
+  const padding = Math.max(minPadding, Math.min(maxPadding, basePadding));
+
+  map.fitBounds(bounds, {
+    padding: padding,
+    duration: 1000 // Smooth animation
+  });
+};
+
 export function Map({
   serviceAreas,
   historicalServiceAreas = [],
@@ -62,6 +123,7 @@ export function Map({
   deploymentTransitions,
   filters,
   isTimelineMode = false,
+  selectedArea = null,
   onServiceAreaClick,
   className,
 }: MapProps) {
@@ -417,20 +479,15 @@ export function Map({
         }
 
         if (clickedArea) {
-          const bounds = new mapboxgl.LngLatBounds();
           const geometry = features[0].geometry as GeoJSON.Geometry;
-
-          if (geometry.type === "Polygon") {
-            geometry.coordinates[0].forEach((coord: [number, number]) => {
-              bounds.extend(coord);
-            });
-          }
-
-          currentMap.fitBounds(bounds, { padding: 50 });
+          const bounds = calculateGeometryBounds(geometry);
+          fitBoundsWithResponsivePadding(currentMap, bounds);
           onServiceAreaClick(clickedArea);
         }
       } else if (features.length <= 5) {
-        // Multiple areas - show service selector in popup
+        // Multiple areas - clear any existing selection first, then show service selector in popup
+        onServiceAreaClick(null);
+
         console.log('Multiple areas clicked - features found:', features.length);
         console.log('Available service areas:', serviceAreas.map(a => a.id));
         console.log('Available historical areas:', historicalServiceAreas.map(a => a.id));
@@ -524,16 +581,9 @@ export function Map({
               // Find the corresponding feature for fast bounds calculation
               const areaWithFeature = overlappingAreas.find(item => item.area.id === area.id);
               if (areaWithFeature) {
-                const bounds = new mapboxgl.LngLatBounds();
                 const geometry = areaWithFeature.feature.geometry as GeoJSON.Geometry;
-
-                // Extract bounds directly from the already-loaded feature geometry
-                if (geometry.type === "Polygon") {
-                  geometry.coordinates[0].forEach((coord: [number, number]) => {
-                    bounds.extend(coord);
-                  });
-                  currentMap.fitBounds(bounds, { padding: 50 });
-                }
+                const bounds = calculateGeometryBounds(geometry);
+                fitBoundsWithResponsivePadding(currentMap, bounds);
               }
 
               onServiceAreaClick(area);
@@ -547,11 +597,35 @@ export function Map({
           />
         );
 
-        // Create and show popup with transparent background
+        // Calculate smart positioning to ensure popup stays on screen
+        const mapContainer = currentMap.getContainer();
+        const mapRect = mapContainer.getBoundingClientRect();
+        const clickX = e.point.x;
+        const clickY = e.point.y;
+
+        // Determine best anchor based on click position relative to viewport
+        let anchor: 'top' | 'bottom' | 'left' | 'right' = 'bottom';
+        if (clickY < mapRect.height * 0.3) {
+          // Click near top - show popup below
+          anchor = 'top';
+        } else if (clickY > mapRect.height * 0.7) {
+          // Click near bottom - show popup above
+          anchor = 'bottom';
+        } else if (clickX < mapRect.width * 0.3) {
+          // Click near left - show popup to the right
+          anchor = 'left';
+        } else if (clickX > mapRect.width * 0.7) {
+          // Click near right - show popup to the left
+          anchor = 'right';
+        }
+
+        // Create and show popup with calculated positioning
         const popup = new mapboxgl.Popup({
           closeButton: false,
           offset: 8,
-          className: 'transparent-popup'
+          className: 'transparent-popup',
+          anchor: anchor,
+          maxWidth: '300px'
         });
 
         popup
@@ -672,12 +746,15 @@ export function Map({
   }, [allHistoricalServiceAreas]);
 
 
-  // Handle timeline mode toggling separately from data updates
+  // Handle timeline mode toggling and focus mode separately from data updates
   useEffect(() => {
     if (!map.current) return;
 
     const currentMap = map.current;
     const visibilityUpdates: Array<{ layerId: string; visibility: "visible" | "none" }> = [];
+
+    // Focus mode: when a service area is selected, only show that one
+    const isFocusMode = !!selectedArea;
 
     if (isTimelineMode) {
       // Hide current service areas when entering timeline mode
@@ -699,15 +776,22 @@ export function Map({
         const lineLayerId = `${area.id}-line`;
 
         if (currentMap.getLayer(fillLayerId) && currentMap.getLayer(lineLayerId)) {
-          // Apply current filters
-          const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-          const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
-          const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
-          const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
-          const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
-          const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+          let visibility: "visible" | "none" = "none";
 
-          const visibility = (companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch) ? "visible" : "none";
+          if (isFocusMode) {
+            // In focus mode, only show the selected area
+            visibility = (area.id === selectedArea.id) ? "visible" : "none";
+          } else {
+            // Normal mode - apply current filters
+            const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
+            const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
+            const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
+            const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
+            const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
+            const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+
+            visibility = (companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch) ? "visible" : "none";
+          }
 
           visibilityUpdates.push(
             { layerId: fillLayerId, visibility },
@@ -741,7 +825,7 @@ export function Map({
         console.warn(`Failed to update visibility for ${layerId}:`, error);
       }
     });
-  }, [isTimelineMode, serviceAreas, filters]);
+  }, [isTimelineMode, serviceAreas, filters, selectedArea]);
 
   // Update historical areas visibility when timeline data changes (not mode toggle)
   useEffect(() => {
@@ -756,18 +840,27 @@ export function Map({
     // Filter historical areas that should be visible at the current timeline date
     const visibleHistoricalAreaIds = new Set<string>();
 
+    const isFocusMode = !!selectedArea;
+
     historicalServiceAreas.forEach((area) => {
-      // Check if area passes filter criteria
-      const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-      const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
-      const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
-      const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
-      const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
-      const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+      let shouldShow = false;
 
-      const passesFilters = companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch;
+      if (isFocusMode) {
+        // In focus mode, only show the selected area
+        shouldShow = area.id === selectedArea.id;
+      } else {
+        // Normal mode - check if area passes filter criteria
+        const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
+        const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
+        const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
+        const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
+        const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
+        const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
 
-      if (passesFilters) {
+        shouldShow = companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch;
+      }
+
+      if (shouldShow) {
         // Create the historical ID that was used when loading the area (includes geometry name)
         visibleHistoricalAreaIds.add(`historical-${area.id}-${area.geojsonPath}`);
       }
@@ -810,7 +903,7 @@ export function Map({
         }
       });
     });
-  }, [isTimelineMode, historicalServiceAreas, filters]);
+  }, [isTimelineMode, historicalServiceAreas, filters, selectedArea]);
 
   // Handle smooth transitions for deployment morphing
   useEffect(() => {
