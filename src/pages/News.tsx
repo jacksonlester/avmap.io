@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useLayoutEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -138,6 +138,17 @@ export default function News() {
       search: '',
     });
   };
+
+  // Set up header height CSS custom property for filter positioning
+  useLayoutEffect(() => {
+    function syncHeaderHeight() {
+      const h = document.getElementById('app-header')?.offsetHeight ?? 56;
+      document.documentElement.style.setProperty('--header-h', `${h}px`);
+    }
+    syncHeaderHeight();
+    window.addEventListener('resize', syncHeaderHeight);
+    return () => window.removeEventListener('resize', syncHeaderHeight);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background pt-16">

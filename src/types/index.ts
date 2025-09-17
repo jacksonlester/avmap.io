@@ -7,8 +7,33 @@ export interface ServiceArea {
   lastUpdated: string;
 }
 
+export interface HistoricalServiceArea {
+  id: string;
+  deploymentId: string;
+  name: string;
+  version: string;
+  effectiveDate: string;
+  endDate?: string;
+  company: string;
+  status: 'Commercial' | 'Testing' | 'Pilot';
+  geojsonPath: string;
+  geojson?: {
+    type: 'FeatureCollection';
+    features: Array<{
+      type: 'Feature';
+      properties: Record<string, any>;
+      geometry: Record<string, any>;
+    }>;
+  };
+  notes?: string;
+}
+
 export interface ServiceAreaData {
   serviceAreas: ServiceArea[];
+}
+
+export interface HistoricalServiceAreaData {
+  [key: string]: HistoricalServiceArea;
 }
 
 export interface MapFilters {

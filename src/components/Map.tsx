@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { ServiceArea, MapFilters, COMPANY_COLORS } from "@/types";
+import { ServiceArea, MapFilters, COMPANY_COLORS, HistoricalServiceArea } from "@/types";
 import { toast } from "sonner";
 import { ServiceSelector } from "./ServiceSelector";
 import { createRoot } from "react-dom/client";
@@ -17,20 +17,28 @@ const SERVICE_BOUNDS: [number, number, number, number] = [
 
 interface MapProps {
   serviceAreas: ServiceArea[];
+  historicalServiceAreas?: HistoricalServiceArea[];
+  deploymentTransitions?: Map<string, HistoricalServiceArea | null>;
   filters: MapFilters;
+  isTimelineMode?: boolean;
   onServiceAreaClick: (serviceArea: ServiceArea) => void;
   className?: string;
 }
 
 export function Map({
   serviceAreas,
+  historicalServiceAreas = [],
+  deploymentTransitions,
   filters,
+  isTimelineMode = false,
   onServiceAreaClick,
   className,
 }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [loadedAreas, setLoadedAreas] = useState<Set<string>>(new Set());
+  const [loadedHistoricalAreas, setLoadedHistoricalAreas] = useState<Set<string>>(new Set());
+  const [deploymentSources, setDeploymentSources] = useState<Set<string>>(new Set());
   const activePopup = useRef<mapboxgl.Popup | null>(null);
 
   // Helper function to toggle service area bounds lock
@@ -360,25 +368,93 @@ export function Map({
     });
   }, [serviceAreas, loadedAreas, onServiceAreaClick]);
 
-  // Update visibility based on filters
+  // Load historical service areas (always load them, control visibility separately)
   useEffect(() => {
     if (!map.current) return;
 
     const currentMap = map.current;
 
-    // Filter service areas based on current filters
-    const filteredAreas = serviceAreas.filter((area) => {
-      const companyMatch =
-        filters.companies.length === 0 ||
-        filters.companies.includes(area.company);
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(area.status);
-      return companyMatch && statusMatch;
+    // Load all historical service areas that haven't been loaded yet
+    historicalServiceAreas.forEach(async (area) => {
+      if (loadedHistoricalAreas.has(area.id)) return;
+
+      try {
+        const companyConfig = COMPANY_COLORS[area.company];
+        const color = companyConfig?.color || '#666666';
+
+        // Load GeoJSON from external file
+        let geojsonData;
+        if (area.geojson) {
+          geojsonData = area.geojson;
+        } else {
+          const response = await fetch(area.geojsonPath);
+          geojsonData = await response.json();
+        }
+
+        // Add source with loaded geojson
+        currentMap.addSource(area.id, {
+          type: "geojson",
+          data: geojsonData as GeoJSON.FeatureCollection,
+        });
+
+        // Add fill layer
+        currentMap.addLayer({
+          id: `${area.id}-fill`,
+          type: "fill",
+          source: area.id,
+          paint: {
+            "fill-color": color,
+            "fill-opacity": 0.3,
+          },
+          layout: {
+            visibility: "none", // Hidden by default, timeline will control visibility
+          },
+        });
+
+        // Add line layer
+        currentMap.addLayer({
+          id: `${area.id}-line`,
+          type: "line",
+          source: area.id,
+          paint: {
+            "line-color": color,
+            "line-width": 2,
+            "line-opacity": 0.8,
+          },
+          layout: {
+            visibility: "none", // Hidden by default, timeline will control visibility
+          },
+        });
+
+        // Add hover effects
+        currentMap.on("mouseenter", `${area.id}-fill`, () => {
+          currentMap.getCanvas().style.cursor = "pointer";
+          currentMap.setPaintProperty(`${area.id}-line`, "line-width", 3);
+          currentMap.setPaintProperty(`${area.id}-fill`, "fill-opacity", 0.5);
+        });
+
+        currentMap.on("mouseleave", `${area.id}-fill`, () => {
+          currentMap.getCanvas().style.cursor = "";
+          currentMap.setPaintProperty(`${area.id}-line`, "line-width", 2);
+          currentMap.setPaintProperty(`${area.id}-fill`, "fill-opacity", 0.3);
+        });
+
+        // Mark as loaded
+        setLoadedHistoricalAreas((prev) => new Set([...prev, area.id]));
+      } catch (error) {
+        console.error(`Failed to load historical area ${area.id}:`, error);
+      }
     });
+  }, [historicalServiceAreas, loadedHistoricalAreas]);
 
-    const filteredAreaIds = new Set(filteredAreas.map((area) => area.id));
 
-    // Update visibility for all loaded areas
+  // Update visibility for historical areas (timeline mode)
+  useEffect(() => {
+    if (!map.current || !isTimelineMode) return;
+
+    const currentMap = map.current;
+
+    // Hide current service areas in timeline mode
     serviceAreas.forEach((area) => {
       const fillLayerId = `${area.id}-fill`;
       const lineLayerId = `${area.id}-line`;
@@ -387,12 +463,214 @@ export function Map({
         currentMap.getLayer(fillLayerId) &&
         currentMap.getLayer(lineLayerId)
       ) {
-        const visibility = filteredAreaIds.has(area.id) ? "visible" : "none";
+        currentMap.setLayoutProperty(fillLayerId, "visibility", "none");
+        currentMap.setLayoutProperty(lineLayerId, "visibility", "none");
+      }
+    });
+
+    // Filter historical areas based on current filters
+    const filteredHistoricalAreas = historicalServiceAreas.filter((area) => {
+      const companyMatch =
+        filters.companies.length === 0 ||
+        filters.companies.includes(area.company);
+      const statusMatch =
+        filters.statuses.length === 0 || filters.statuses.includes(area.status);
+      return companyMatch && statusMatch;
+    });
+
+    const filteredHistoricalAreaIds = new Set(filteredHistoricalAreas.map((area) => area.id));
+
+    // Update visibility for ALL loaded historical areas (not just currently active ones)
+    loadedHistoricalAreas.forEach((areaId) => {
+      const fillLayerId = `${areaId}-fill`;
+      const lineLayerId = `${areaId}-line`;
+
+      if (
+        currentMap.getLayer(fillLayerId) &&
+        currentMap.getLayer(lineLayerId)
+      ) {
+        const visibility = filteredHistoricalAreaIds.has(areaId) ? "visible" : "none";
         currentMap.setLayoutProperty(fillLayerId, "visibility", visibility);
         currentMap.setLayoutProperty(lineLayerId, "visibility", visibility);
       }
     });
-  }, [serviceAreas, filters, loadedAreas]);
+  }, [historicalServiceAreas, filters, loadedHistoricalAreas, isTimelineMode, serviceAreas]);
+
+  // Show current service areas when timeline mode is disabled
+  useEffect(() => {
+    if (!map.current || isTimelineMode) return;
+
+    const currentMap = map.current;
+
+    // Show current service areas and hide historical ones when not in timeline mode
+    serviceAreas.forEach((area) => {
+      const fillLayerId = `${area.id}-fill`;
+      const lineLayerId = `${area.id}-line`;
+
+      if (
+        currentMap.getLayer(fillLayerId) &&
+        currentMap.getLayer(lineLayerId)
+      ) {
+        // Filter by current filters
+        const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
+        const statusMatch = filters.statuses.length === 0 || filters.statuses.includes(area.status);
+        const visibility = (companyMatch && statusMatch) ? "visible" : "none";
+
+        currentMap.setLayoutProperty(fillLayerId, "visibility", visibility);
+        currentMap.setLayoutProperty(lineLayerId, "visibility", visibility);
+      }
+    });
+
+    // Hide all historical areas when not in timeline mode
+    loadedHistoricalAreas.forEach((areaId) => {
+      const fillLayerId = `${areaId}-fill`;
+      const lineLayerId = `${areaId}-line`;
+
+      if (
+        currentMap.getLayer(fillLayerId) &&
+        currentMap.getLayer(lineLayerId)
+      ) {
+        currentMap.setLayoutProperty(fillLayerId, "visibility", "none");
+        currentMap.setLayoutProperty(lineLayerId, "visibility", "none");
+      }
+    });
+  }, [isTimelineMode, serviceAreas, filters, loadedAreas, loadedHistoricalAreas]);
+
+  // Handle smooth transitions for deployment morphing
+  useEffect(() => {
+    if (!map.current || !isTimelineMode || !deploymentTransitions || deploymentTransitions.size === 0) return;
+
+    const currentMap = map.current;
+
+    // Enable transitions for smooth morphing
+    currentMap.setTransition({
+      duration: 300,
+      delay: 0
+    });
+
+    deploymentTransitions.forEach((activeArea, deploymentId) => {
+      const sourceId = `deployment-${deploymentId}`;
+      const fillLayerId = `deployment-${deploymentId}-fill`;
+      const lineLayerId = `deployment-${deploymentId}-line`;
+
+      if (activeArea) {
+        // Filter by company and status
+        const companyMatch = filters.companies.length === 0 || filters.companies.includes(activeArea.company);
+        const statusMatch = filters.statuses.length === 0 || filters.statuses.includes(activeArea.status);
+
+        if (companyMatch && statusMatch) {
+          const companyConfig = COMPANY_COLORS[activeArea.company];
+          const color = companyConfig?.color || '#666666';
+
+          // Create or update source
+          if (!deploymentSources.has(deploymentId)) {
+            // Load the geojson for this area
+            fetch(activeArea.geojsonPath)
+              .then(response => {
+                if (!response.ok) throw new Error(`Failed to fetch ${activeArea.geojsonPath}`);
+                return response.json();
+              })
+              .then(geojsonData => {
+                // Check if map is still available
+                if (!currentMap || !currentMap.getStyle()) return;
+              // Add source
+              currentMap.addSource(sourceId, {
+                type: "geojson",
+                data: geojsonData as GeoJSON.FeatureCollection,
+              });
+
+              // Add fill layer
+              currentMap.addLayer({
+                id: fillLayerId,
+                type: "fill",
+                source: sourceId,
+                paint: {
+                  "fill-color": color,
+                  "fill-opacity": 0.3,
+                },
+                layout: {
+                  visibility: "visible",
+                },
+              });
+
+              // Add line layer
+              currentMap.addLayer({
+                id: lineLayerId,
+                type: "line",
+                source: sourceId,
+                paint: {
+                  "line-color": color,
+                  "line-width": 2,
+                  "line-opacity": 0.8,
+                },
+                layout: {
+                  visibility: "visible",
+                },
+              });
+
+              // Add hover effects
+              currentMap.on("mouseenter", fillLayerId, () => {
+                currentMap.getCanvas().style.cursor = "pointer";
+                currentMap.setPaintProperty(lineLayerId, "line-width", 3);
+                currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.5);
+              });
+
+              currentMap.on("mouseleave", fillLayerId, () => {
+                currentMap.getCanvas().style.cursor = "";
+                currentMap.setPaintProperty(lineLayerId, "line-width", 2);
+                currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.3);
+              });
+
+              setDeploymentSources(prev => new Set([...prev, deploymentId]));
+            }).catch(error => {
+              console.error(`Failed to load deployment ${deploymentId}:`, error);
+            });
+          } else {
+            // Update existing source data for smooth morphing
+            fetch(activeArea.geojsonPath)
+              .then(response => {
+                if (!response.ok) throw new Error(`Failed to fetch ${activeArea.geojsonPath}`);
+                return response.json();
+              })
+              .then(geojsonData => {
+                // Check if map is still available
+                if (!currentMap || !currentMap.getStyle()) return;
+              const source = currentMap.getSource(sourceId) as mapboxgl.GeoJSONSource;
+              if (source) {
+                source.setData(geojsonData as GeoJSON.FeatureCollection);
+              }
+
+              // Update colors in case company changed
+              if (currentMap.getLayer(fillLayerId)) {
+                currentMap.setPaintProperty(fillLayerId, "fill-color", color);
+                currentMap.setPaintProperty(lineLayerId, "line-color", color);
+              }
+
+              // Show layers
+              if (currentMap.getLayer(fillLayerId)) {
+                currentMap.setLayoutProperty(fillLayerId, "visibility", "visible");
+                currentMap.setLayoutProperty(lineLayerId, "visibility", "visible");
+              }
+            }).catch(error => {
+              console.error(`Failed to update deployment ${deploymentId}:`, error);
+            });
+          }
+        } else {
+          // Hide if filtered out
+          if (currentMap.getLayer(fillLayerId)) {
+            currentMap.setLayoutProperty(fillLayerId, "visibility", "none");
+            currentMap.setLayoutProperty(lineLayerId, "visibility", "none");
+          }
+        }
+      } else {
+        // No active area for this deployment - hide it
+        if (currentMap.getLayer(fillLayerId)) {
+          currentMap.setLayoutProperty(fillLayerId, "visibility", "none");
+          currentMap.setLayoutProperty(lineLayerId, "visibility", "none");
+        }
+      }
+    });
+  }, [deploymentTransitions, filters, isTimelineMode, deploymentSources]);
 
   // Theme change handler
   useEffect(() => {
