@@ -5,16 +5,16 @@ import { Map } from '@/components/Map';
 import { BottomSheet } from '@/components/BottomSheet';
 import { TimeSlider } from '@/components/TimeSlider';
 import { FiltersOverlay, FiltersState, Taxonomy } from '@/components/filters/FiltersOverlay';
-import { ServiceArea, ServiceAreaData, MapFilters, HistoricalServiceAreaData, HistoricalServiceArea } from '@/types';
-import { processHistoricalData, getServiceAreasForDate, getDateRange, getDeploymentTransitions } from '@/lib/historicalData';
+import { ServiceArea, ServiceAreaData, MapFilters, HistoricalServiceArea } from '@/types';
+import { getAllServicesAtDate, getCurrentServiceAreas, getAllHistoricalServiceStates } from '@/lib/eventService';
+import { loadGeometry } from '@/lib/storageService';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
-  const [historicalData, setHistoricalData] = useState<HistoricalServiceAreaData>({});
-  const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(new Date());
+  const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(new Date('2025-09-01'));
   const [isTimelineMode, setIsTimelineMode] = useState(false);
   const [taxonomy] = useState<Taxonomy>({
     companies: ['Waymo', 'Tesla', 'Zoox', 'May Mobility'],
@@ -45,46 +45,53 @@ const Index = () => {
     };
   });
 
-  // Load service areas data
+  // Load current service areas from Supabase
   useEffect(() => {
-    const loadData = async () => {
+    const loadCurrentServices = async () => {
       try {
-        const response = await fetch('/data/index.json');
-        const data: ServiceAreaData = await response.json();
-        setServiceAreas(data.serviceAreas);
+        const services = await getCurrentServiceAreas();
+        console.log('Loaded current services from Supabase:', services.length, services);
+        setServiceAreas(services);
       } catch (error) {
-        console.error('Failed to load service areas:', error);
+        console.error('Failed to load current service areas:', error);
       }
     };
-    loadData();
+    loadCurrentServices();
   }, []);
 
-  // Load historical service areas data
+  // Load ALL historical service states at initialization for instant timeline scrubbing
   useEffect(() => {
-    const loadHistoricalData = async () => {
+    const loadAllHistoricalStates = async () => {
       try {
-        const response = await fetch('/data/historical_service_areas.json');
-        const rawData: HistoricalServiceAreaData = await response.json();
-        const processedData = processHistoricalData(rawData);
-        setHistoricalData(processedData);
+        console.log('Loading all historical service states for preloading...');
+        const allStates = await getAllHistoricalServiceStates();
+        console.log('Loaded all historical states:', allStates.length, allStates);
+        setAllHistoricalAreas(allStates as HistoricalServiceArea[]);
+      } catch (error) {
+        console.error('Failed to load all historical service states:', error);
+      }
+    };
+    loadAllHistoricalStates();
+  }, []);
 
-        // Set initial timeline date to a known date with active service areas
-        // Use September 1, 2025 which should have active areas based on the data
-        setCurrentTimelineDate(new Date('2025-09-01'));
+  // Timeline date is initialized directly in useState above
 
-        console.log('Historical data loaded:', {
-          rawDataKeys: Object.keys(rawData),
-          processedDataKeys: Object.keys(processedData),
-          totalAreas: Object.keys(processedData).length,
-          sampleArea: Object.values(processedData)[0],
-          initialDate: new Date('2025-09-01')
-        });
+  // Load historical service areas for timeline date using event sourcing
+  useEffect(() => {
+    if (!currentTimelineDate) return;
+
+    const loadHistoricalAreas = async () => {
+      try {
+        const services = await getAllServicesAtDate(currentTimelineDate);
+        setActiveHistoricalAreas(services as HistoricalServiceArea[]);
       } catch (error) {
         console.error('Failed to load historical service areas:', error);
+        setActiveHistoricalAreas([]);
       }
     };
-    loadHistoricalData();
-  }, []);
+
+    loadHistoricalAreas();
+  }, [currentTimelineDate]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -126,8 +133,12 @@ const Index = () => {
     window.dispatchEvent(new CustomEvent('avmap:zoom-filter', { detail: { type, value } }));
   }, []);
 
-  // Calculate active service areas for the current timeline date
-  const activeHistoricalAreas = getServiceAreasForDate(historicalData, currentTimelineDate);
+  // Calculate active service areas for the current timeline date using event sourcing
+  const [activeHistoricalAreas, setActiveHistoricalAreas] = useState<HistoricalServiceArea[]>([]);
+
+  // Store ALL historical service states for preloading
+  const [allHistoricalAreas, setAllHistoricalAreas] = useState<HistoricalServiceArea[]>([]);
+
 
   // Get deployment transitions for smooth morphing (temporarily disabled)
   const deploymentTransitions = undefined; // new Map();
@@ -144,12 +155,10 @@ const Index = () => {
           endDate: a.endDate,
           company: a.company,
           name: a.name
-        })),
-        allHistoricalAreas: Object.keys(historicalData).length,
-        sampleHistoricalArea: Object.values(historicalData)[0]
+        }))
       });
     }
-  }, [isTimelineMode, currentTimelineDate, activeHistoricalAreas, historicalData]);
+  }, [isTimelineMode, currentTimelineDate, activeHistoricalAreas]);
 
   // Get date range for timeline - override start date to Oct 8, 2020
   const dateRange = {
@@ -216,6 +225,7 @@ const Index = () => {
           <Map
             serviceAreas={serviceAreas}
             historicalServiceAreas={activeHistoricalAreas}
+            allHistoricalServiceAreas={allHistoricalAreas}
             deploymentTransitions={deploymentTransitions}
             filters={{
               companies: filters.companies,
@@ -241,16 +251,14 @@ const Index = () => {
       />
 
       {/* Time Slider */}
-      {Object.keys(historicalData).length > 0 && (
-        <TimeSlider
-          startDate={dateRange.start}
-          endDate={dateRange.end}
-          currentDate={currentTimelineDate}
-          onDateChange={handleTimelineDateChange}
-          isTimelineMode={isTimelineMode}
-          onTimelineModeChange={setIsTimelineMode}
-        />
-      )}
+      <TimeSlider
+        startDate={dateRange.start}
+        endDate={dateRange.end}
+        currentDate={currentTimelineDate}
+        onDateChange={handleTimelineDateChange}
+        isTimelineMode={isTimelineMode}
+        onTimelineModeChange={setIsTimelineMode}
+      />
 
       {/* Bottom Sheet */}
       <BottomSheet

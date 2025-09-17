@@ -13,7 +13,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Active",
-    "geojsonPath": "/areas/Waymo San Francisco June 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo San Francisco June 17 2025 Boundary.geoJSON",
     "notes": "Waymo San Francisco service"
   },
   "waymo-san-francisco-2024-08": {
@@ -30,7 +30,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo San Francisco August 2024 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo San Francisco August 6 2024 Boundary.geoJSON",
     "notes": "Waymo San Francisco service"
   },
   "waymo-san-francisco-2023-08": {
@@ -47,7 +47,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo San Francisco August 2023 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo San Francisco August 21 2023 Boundary.geoJSON",
     "notes": "Waymo San Francisco service"
   },
   "waymo-phoenix-2024-06": {
@@ -64,7 +64,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Active",
-    "geojsonPath": "/areas/Waymo Phoenix June 2024 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Phoenix June 5 2024 Boundary.geoJSON",
     "notes": "Waymo Phoenix service"
   },
   "waymo-phoenix-2023-05": {
@@ -81,7 +81,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Phoenix May 2023 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Phoenix May 4 2023 Boundary.geoJSON",
     "notes": "Waymo Phoenix service"
   },
   "waymo-phoenix-2022-11": {
@@ -98,7 +98,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Phoenix December 2022 Boundary.geojson",
+    "geojsonPath": "/areas/Waymo Phoenix November 1 2022 Boundary.geojson",
     "notes": "Waymo Phoenix service"
   },
   "waymo-austin-2025-07": {
@@ -115,7 +115,7 @@
     "fares": "Yes",
     "directBooking": "No",
     "status": "Active",
-    "geojsonPath": "/areas/Waymo Austin July 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Austin July 24 2025 Boundary.geoJSON",
     "notes": "Waymo Austin service"
   },
   "waymo-austin-2025-03": {
@@ -132,7 +132,7 @@
     "fares": "Yes",
     "directBooking": "No",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Austin March 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Austin March 15 2025 Boundary.geoJSON",
     "notes": "Waymo Austin service"
   },
   "tesla-bay-area-2025-07": {
@@ -166,7 +166,7 @@
     "fares": "Yes",
     "directBooking": "No",
     "status": "Active",
-    "geojsonPath": "/areas/May Mobility Atlanta September 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/May Mobility Atlanta September 1 2025 Boundary.geoJSON",
     "notes": "May Mobility Atlanta service"
   },
   "waymo-atlanta-2025-06": {
@@ -183,7 +183,7 @@
     "fares": "Yes",
     "directBooking": "No",
     "status": "Active",
-    "geojsonPath": "/areas/Waymo Atlanta June 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Atlanta June 20 2025 Boundary.geoJSON",
     "notes": "Waymo Atlanta service"
   },
   "waymo-silicon-valley-2025-06": {
@@ -200,7 +200,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Active",
-    "geojsonPath": "/areas/Waymo Silicon Valley June 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Silicon Valley June 17 2025 Boundary.geoJSON",
     "notes": "Waymo Silicon Valley service"
   },
   "waymo-san-francisco-2022-12": {
@@ -217,7 +217,7 @@
     "fares": "No",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo San Francisco December 2022 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo San Francisco December 16 2022 Boundary.geoJSON",
     "notes": "Waymo San Francisco service"
   },
   "waymo-silicon-valley-2025-03": {
@@ -234,7 +234,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Silicon Valley March 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Silicon Valley March 15 2025 Boundary.geoJSON",
     "notes": "Waymo Silicon Valley service"
   },
   "tesla-austin-2025-08": {
@@ -302,7 +302,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Active",
-    "geojsonPath": "/areas/Waymo Los Angeles June 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Los Angeles June 17 2025 Boundary.geoJSON",
     "notes": "Waymo Los Angeles service"
   },
   "waymo-los-angeles-2024-03": {
@@ -319,7 +319,7 @@
     "fares": "No",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Los Angeles March 2024 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Los Angeles April 10 2024 Boundary.geoJSON",
     "notes": "Waymo Los Angeles service"
   },
   "zoox-las-vegas-2025-09": {
@@ -336,7 +336,7 @@
     "fares": "No",
     "directBooking": "Yes",
     "status": "Active",
-    "geojsonPath": "/areas/Zoox Las Vegas September 2025 Boundary.geoJSON",
+    "geojsonPath": "/areas/Zoox Las Vegas September 1 2025 Boundary.geoJSON",
     "notes": "Zoox Las Vegas service"
   },
   "waymo-los-angeles-2024-08": {
@@ -353,7 +353,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Los Angeles August 2024 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Los Angeles August 5 2024 Boundary.geoJSON",
     "notes": "Waymo Los Angeles service"
   },
   "waymo-los-angeles-2024-04": {
@@ -370,7 +370,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Los Angeles March 2024 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Los Angeles April 10 2024 Boundary.geoJSON",
     "notes": "Waymo Los Angeles service"
   },
   "waymo-phoenix-2020-10": {
@@ -387,7 +387,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Phoenix October 2020.geoJSON",
+    "geojsonPath": "/areas/Waymo Phoenix October 8 2020 Boundary.geoJSON",
     "notes": "Waymo Phoenix service"
   },
   "tesla-austin-2025-09": {
@@ -421,7 +421,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo San Francisco August 2023 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo San Francisco August 21 2023 Boundary.geoJSON",
     "notes": "Waymo San Francisco service"
   },
   "waymo-los-angeles-2024-11": {
@@ -438,7 +438,7 @@
     "fares": "Yes",
     "directBooking": "Yes",
     "status": "Testing",
-    "geojsonPath": "/areas/Waymo Los Angeles August 2024 Boundary.geoJSON",
+    "geojsonPath": "/areas/Waymo Los Angeles August 5 2024 Boundary.geoJSON",
     "notes": "Waymo Los Angeles service"
   }
 }

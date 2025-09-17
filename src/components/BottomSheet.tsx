@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,14 +56,35 @@ const SERVICE_METADATA = {
 export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = false, timelineDate }: BottomSheetProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // Get historically accurate data for timeline mode with debouncing
+  const [historicallyAccurateArea, setHistoricallyAccurateArea] = useState<ServiceArea | HistoricalServiceArea | null>(serviceArea);
+  const [isLoadingHistoricalData, setIsLoadingHistoricalData] = useState(false);
+
   // Handle click outside to close
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (cardRef.current && !cardRef.current.contains(event.target as Node)) {
-        onClose();
+      const target = event.target as Node;
+
+      // Don't close if clicking on the BottomSheet itself
+      if (cardRef.current && cardRef.current.contains(target)) {
+        return;
       }
+
+      // Don't close if clicking on timeline controls
+      const timelineContainer = document.querySelector('[data-timeline-container]');
+      if (timelineContainer && timelineContainer.contains(target)) {
+        return;
+      }
+
+      // Don't close if clicking on filters overlay
+      const filtersOverlay = document.getElementById('filters-overlay');
+      if (filtersOverlay && filtersOverlay.contains(target)) {
+        return;
+      }
+
+      onClose();
     };
 
     // Add delay to prevent immediate closure when opening
@@ -76,6 +97,43 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
+
+  // Update historical data when timeline changes (with debouncing to prevent flickering)
+  useEffect(() => {
+    if (!isTimelineMode || !timelineDate || !serviceArea) {
+      setHistoricallyAccurateArea(serviceArea);
+      setIsLoadingHistoricalData(false);
+      return;
+    }
+
+    // Debounce historical data fetching to prevent rapid re-renders during scrubbing
+    const timeoutId = setTimeout(() => {
+      // Look up the historical state for this service at the timeline date
+      const getHistoricalState = async () => {
+        setIsLoadingHistoricalData(true);
+        try {
+          const { getAllServicesAtDate } = await import('@/lib/eventService');
+          const historicalServices = await getAllServicesAtDate(timelineDate);
+
+          // Find the service that matches the clicked area
+          const historicalService = historicalServices.find(service =>
+            service.company === serviceArea.company && service.name === serviceArea.name
+          );
+
+          setHistoricallyAccurateArea(historicalService || null);
+        } catch (error) {
+          console.error('Error getting historical service state:', error);
+          setHistoricallyAccurateArea(serviceArea);
+        } finally {
+          setIsLoadingHistoricalData(false);
+        }
+      };
+
+      getHistoricalState();
+    }, 150); // 150ms debounce - fast enough to feel responsive but prevents rapid updates
+
+    return () => clearTimeout(timeoutId);
+  }, [isTimelineMode, timelineDate, serviceArea]);
 
   if (!isOpen || !serviceArea) return null;
 
@@ -100,6 +158,13 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
     if (access === 'Public') return 'Yes';
     if (access === 'Waitlist') return 'No';
     return access === 'Yes' ? 'Yes' : 'No';
+  };
+
+
+  // Helper function to get field value or N/A
+  const getFieldValue = (field: keyof (ServiceArea | HistoricalServiceArea), fallback: string = 'N/A') => {
+    if (!historicallyAccurateArea) return 'N/A';
+    return (historicallyAccurateArea as any)[field] || fallback;
   };
 
   return (
@@ -128,47 +193,47 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
             {/* Platform */}
             <ServiceField
               metadata={SERVICE_METADATA.platform}
-              value={serviceArea.platform || 'Unknown'}
+              value={getFieldValue('platform', 'Unknown')}
             />
 
             {/* Supervision */}
             <ServiceField
               metadata={SERVICE_METADATA.supervision}
-              value={serviceArea.supervision || 'Fully Autonomous'}
+              value={getFieldValue('supervision', 'Fully Autonomous')}
             />
 
             {/* Service Availability */}
             <ServiceField
               metadata={SERVICE_METADATA.access}
-              value={getAccessDisplay(serviceArea.access || 'Public')}
+              value={historicallyAccurateArea ? getAccessDisplay(getFieldValue('access', 'Public')) : 'N/A'}
             />
 
             {/* Charges Fares */}
             <ServiceField
               metadata={SERVICE_METADATA.fares}
-              value={serviceArea.fares || 'Yes'}
+              value={getFieldValue('fares', 'Yes')}
             />
 
             {/* Public Access */}
             <ServiceField
               metadata={SERVICE_METADATA.publicAccess}
-              value={getPublicAccessDisplay(serviceArea.access || 'Public')}
+              value={historicallyAccurateArea ? getPublicAccessDisplay(getFieldValue('access', 'Public')) : 'N/A'}
             />
 
             {/* Direct Booking */}
             <ServiceField
               metadata={SERVICE_METADATA.directBooking}
-              value={serviceArea.directBooking || 'Yes'}
+              value={getFieldValue('directBooking', 'Yes')}
             />
 
             {/* Status Badge */}
             <div className="flex items-center gap-2 pt-2 border-t border-white/10">
               <span className="text-xs text-white/70 uppercase tracking-wide">Status:</span>
               <Badge
-                variant={serviceArea.status === 'Active' ? 'default' : 'secondary'}
+                variant={getFieldValue('status', 'N/A') === 'Active' ? 'default' : 'secondary'}
                 className="text-xs bg-white/20 text-white border-white/30"
               >
-                {serviceArea.status}
+                {getFieldValue('status', 'N/A')}
               </Badge>
             </div>
           </CardContent>

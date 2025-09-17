@@ -126,6 +126,7 @@ export function TimeSlider({
       <Sheet>
         <SheetTrigger asChild>
           <Button
+            data-timeline-container
             className="fixed bottom-3 left-4 z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
             title="Show timeline"
           >
@@ -184,6 +185,7 @@ export function TimeSlider({
   if (isMinimized) {
     return (
       <Button
+        data-timeline-container
         onClick={() => {
           setIsMinimized(false);
           if (onTimelineModeChange && !isTimelineMode) {
@@ -202,6 +204,7 @@ export function TimeSlider({
   return (
     <Card
       ref={cardRef}
+      data-timeline-container
       className={cn(
         "fixed z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg pointer-events-auto",
         isDragging && "cursor-grabbing",
