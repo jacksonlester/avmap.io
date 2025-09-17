@@ -2,7 +2,12 @@ export interface ServiceArea {
   id: string;
   name: string;
   company: string;
-  status: 'Commercial' | 'Testing' | 'Pilot';
+  platform: string;
+  access: 'Public' | 'Waitlist';
+  supervision: 'Autonomous' | 'Safety Driver' | 'Safety Attendant';
+  fares: 'Yes' | 'No';
+  directBooking: 'Yes' | 'No';
+  status: 'Active' | 'Deprecated';
   geojsonPath: string;
   lastUpdated: string;
 }
@@ -15,7 +20,12 @@ export interface HistoricalServiceArea {
   effectiveDate: string;
   endDate?: string;
   company: string;
-  status: 'Commercial' | 'Testing' | 'Pilot';
+  platform: string;
+  access: 'Public' | 'Waitlist';
+  supervision: 'Autonomous' | 'Safety Driver' | 'Safety Attendant';
+  fares: 'Yes' | 'No';
+  directBooking: 'Yes' | 'No';
+  status: 'Active' | 'Deprecated';
   geojsonPath: string;
   geojson?: {
     type: 'FeatureCollection';
@@ -38,7 +48,11 @@ export interface HistoricalServiceAreaData {
 
 export interface MapFilters {
   companies: string[];
-  statuses: string[];
+  platform: string[];
+  supervision: string[];
+  access: string[];
+  fares: string[];
+  directBooking: string[];
 }
 
 export interface CompanyConfig {

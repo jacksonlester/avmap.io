@@ -28,15 +28,56 @@ export function extractCompanyFromData(serviceArea: HistoricalServiceArea): stri
   return 'Unknown';
 }
 
-// Process historical data and add missing company info
+// Process historical data and add missing company info and attributes
 export function processHistoricalData(data: HistoricalServiceAreaData): HistoricalServiceAreaData {
   const processed: HistoricalServiceAreaData = {};
 
   Object.entries(data).forEach(([key, serviceArea]) => {
+    const company = serviceArea.company || extractCompanyFromData(serviceArea);
+
+    // Add attributes based on company and deployment context
+    let platform = 'Unknown';
+    let supervision = 'Fully Autonomous';
+    let access = 'Public';
+    let fares = 'Yes';
+    let directBooking = 'Yes';
+
+    // Set attributes based on company and historical context
+    if (company === 'Waymo') {
+      platform = serviceArea.name === 'Austin' ? 'Uber' : 'Waymo';
+      supervision = 'Fully Autonomous';
+      access = 'Public';
+      fares = 'Yes';
+      directBooking = serviceArea.name === 'Austin' ? 'No' : 'Yes';
+    } else if (company === 'Tesla') {
+      platform = 'Robotaxi';
+      supervision = 'Safety Driver';
+      access = serviceArea.name === 'Bay Area' ? 'Waitlist' : 'Public';
+      fares = 'Yes';
+      directBooking = 'Yes';
+    } else if (company === 'Zoox') {
+      platform = 'Zoox';
+      supervision = 'Fully Autonomous';
+      access = 'Public';
+      fares = 'No';
+      directBooking = 'Yes';
+    } else if (company === 'May Mobility') {
+      platform = 'Lyft';
+      supervision = 'Safety Driver';
+      access = 'Public';
+      fares = 'Yes';
+      directBooking = 'No';
+    }
+
     processed[key] = {
       ...serviceArea,
-      company: serviceArea.company || extractCompanyFromData(serviceArea),
-      status: serviceArea.status || 'Testing', // Default status
+      company,
+      platform,
+      supervision,
+      access,
+      fares,
+      directBooking,
+      status: serviceArea.status || 'Testing',
     };
   });
 

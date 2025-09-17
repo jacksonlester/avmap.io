@@ -470,12 +470,14 @@ export function Map({
 
     // Filter historical areas based on current filters
     const filteredHistoricalAreas = historicalServiceAreas.filter((area) => {
-      const companyMatch =
-        filters.companies.length === 0 ||
-        filters.companies.includes(area.company);
-      const statusMatch =
-        filters.statuses.length === 0 || filters.statuses.includes(area.status);
-      return companyMatch && statusMatch;
+      const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
+      const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
+      const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
+      const accessMatch = filters.access.length === 0 || filters.access.includes(area.access || 'Public');
+      const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
+      const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+
+      return companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch;
     });
 
     const filteredHistoricalAreaIds = new Set(filteredHistoricalAreas.map((area) => area.id));
@@ -513,8 +515,13 @@ export function Map({
       ) {
         // Filter by current filters
         const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-        const statusMatch = filters.statuses.length === 0 || filters.statuses.includes(area.status);
-        const visibility = (companyMatch && statusMatch) ? "visible" : "none";
+        const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
+        const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
+        const accessMatch = filters.access.length === 0 || filters.access.includes(area.access || 'Public');
+        const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
+        const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+
+        const visibility = (companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch) ? "visible" : "none";
 
         currentMap.setLayoutProperty(fillLayerId, "visibility", visibility);
         currentMap.setLayoutProperty(lineLayerId, "visibility", visibility);
@@ -554,11 +561,15 @@ export function Map({
       const lineLayerId = `deployment-${deploymentId}-line`;
 
       if (activeArea) {
-        // Filter by company and status
+        // Filter by all available filters
         const companyMatch = filters.companies.length === 0 || filters.companies.includes(activeArea.company);
-        const statusMatch = filters.statuses.length === 0 || filters.statuses.includes(activeArea.status);
+        const platformMatch = !activeArea.platform || filters.platform.length === 0 || filters.platform.includes(activeArea.platform);
+        const supervisionMatch = !activeArea.supervision || filters.supervision.length === 0 || filters.supervision.includes(activeArea.supervision);
+        const accessMatch = !activeArea.access || filters.access.length === 0 || filters.access.includes(activeArea.access);
+        const faresMatch = !activeArea.fares || filters.fares.length === 0 || filters.fares.includes(activeArea.fares);
+        const directBookingMatch = !activeArea.directBooking || filters.directBooking.length === 0 || filters.directBooking.includes(activeArea.directBooking);
 
-        if (companyMatch && statusMatch) {
+        if (companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch) {
           const companyConfig = COMPANY_COLORS[activeArea.company];
           const color = companyConfig?.color || '#666666';
 

@@ -7,9 +7,9 @@ interface ServiceSelectorProps {
 
 export function ServiceSelector({ areas, onSelect }: ServiceSelectorProps) {
   return (
-    <div className="bg-background border border-border rounded-lg shadow-lg min-w-48 max-w-64">
-      <div className="p-3 border-b border-border">
-        <h3 className="text-sm font-medium text-foreground">
+    <div className="bg-black/90 backdrop-blur-md rounded-lg shadow-xl min-w-48 max-w-64">
+      <div className="p-3 border-b border-white/20">
+        <h3 className="text-sm font-medium text-white">
           Select Service ({areas.length})
         </h3>
       </div>
@@ -20,7 +20,7 @@ export function ServiceSelector({ areas, onSelect }: ServiceSelectorProps) {
             <button
               key={area.id}
               onClick={() => onSelect(area)}
-              className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground transition-colors border-b last:border-b-0 border-border/50"
+              className="w-full px-3 py-2 text-left hover:bg-white/10 transition-colors border-b last:border-b-0 border-white/10"
             >
               <div className="flex items-center gap-2">
                 <div 
@@ -28,10 +28,10 @@ export function ServiceSelector({ areas, onSelect }: ServiceSelectorProps) {
                   style={{ backgroundColor: companyConfig.color }}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-foreground truncate">
+                  <div className="text-sm font-medium text-white truncate">
                     {area.company}
                   </div>
-                  <div className="text-xs text-muted-foreground truncate">
+                  <div className="text-xs text-white/70 truncate">
                     {area.name}
                   </div>
                 </div>

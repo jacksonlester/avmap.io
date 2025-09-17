@@ -17,21 +17,32 @@ const Index = () => {
   const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(new Date());
   const [isTimelineMode, setIsTimelineMode] = useState(false);
   const [taxonomy] = useState<Taxonomy>({
-    topic: [],
     companies: ['Waymo', 'Tesla', 'Zoox', 'May Mobility'],
-    geography: [],
-    tags: [],
-    type: []
+    platform: ['Waymo', 'Uber', 'Lyft', 'Robotaxi', 'Zoox'],
+    supervision: ['Fully Autonomous', 'Safety Driver', 'Safety Attendant'],
+    access: ['Public', 'Waitlist'],
+    fares: ['Yes', 'No'],
+    directBooking: ['Yes', 'No']
   });
   const isMobile = useIsMobile();
 
   // Initialize filters from URL params with all options checked by default
   const [filters, setFilters] = useState<FiltersState>(() => {
     const allCompanies = ['Waymo', 'Tesla', 'Zoox', 'May Mobility'];
-    const allStatuses = ['Commercial', 'Testing', 'Pilot'];
-    const companies = searchParams.get('company')?.split(',').filter(Boolean) || allCompanies;
-    const statuses = searchParams.get('status')?.split(',').filter(Boolean) || allStatuses;
-    return { companies, statuses };
+    const allPlatforms = ['Waymo', 'Uber', 'Lyft', 'Robotaxi', 'Zoox'];
+    const allSupervision = ['Fully Autonomous', 'Safety Driver', 'Safety Attendant'];
+    const allAccess = ['Public', 'Waitlist'];
+    const allFares = ['Yes', 'No'];
+    const allDirectBooking = ['Yes', 'No'];
+
+    return {
+      companies: searchParams.get('company')?.split(',').filter(Boolean) || allCompanies,
+      platform: searchParams.get('platform')?.split(',').filter(Boolean) || allPlatforms,
+      supervision: searchParams.get('supervision')?.split(',').filter(Boolean) || allSupervision,
+      access: searchParams.get('access')?.split(',').filter(Boolean) || allAccess,
+      fares: searchParams.get('fares')?.split(',').filter(Boolean) || allFares,
+      directBooking: searchParams.get('directBooking')?.split(',').filter(Boolean) || allDirectBooking,
+    };
   });
 
   // Load service areas data
@@ -79,8 +90,20 @@ const Index = () => {
     if (filters.companies.length > 0) {
       newParams.set('company', filters.companies.join(','));
     }
-    if (filters.statuses.length > 0) {
-      newParams.set('status', filters.statuses.join(','));
+    if (filters.platform.length > 0) {
+      newParams.set('platform', filters.platform.join(','));
+    }
+    if (filters.supervision.length > 0) {
+      newParams.set('supervision', filters.supervision.join(','));
+    }
+    if (filters.access.length > 0) {
+      newParams.set('access', filters.access.join(','));
+    }
+    if (filters.fares.length > 0) {
+      newParams.set('fares', filters.fares.join(','));
+    }
+    if (filters.directBooking.length > 0) {
+      newParams.set('directBooking', filters.directBooking.join(','));
     }
     setSearchParams(newParams);
   }, [filters, setSearchParams]);
@@ -184,7 +207,14 @@ const Index = () => {
             serviceAreas={serviceAreas}
             historicalServiceAreas={activeHistoricalAreas}
             deploymentTransitions={deploymentTransitions}
-            filters={{ companies: filters.companies, statuses: filters.statuses }}
+            filters={{
+              companies: filters.companies,
+              platform: filters.platform,
+              supervision: filters.supervision,
+              access: filters.access,
+              fares: filters.fares,
+              directBooking: filters.directBooking
+            }}
             isTimelineMode={isTimelineMode}
             onServiceAreaClick={handleServiceAreaClick}
             className="w-full h-full"
