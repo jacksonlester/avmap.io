@@ -177,19 +177,22 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
 
   const serviceLinks = getServiceLinks();
 
-  // Format the title based on timeline mode
-  const getTitle = () => {
-    let dateText = 'as of Today';
+  // Get the service name (first line)
+  const getServiceName = () => {
+    return `${serviceArea.company} ${serviceArea.name} Service`;
+  };
 
+  // Get the date text (second line)
+  const getDateText = () => {
     if (isTimelineMode && timelineDate) {
       // Check if timeline date is today
       const today = new Date();
       const isToday = timelineDate.toDateString() === today.toDateString();
 
       if (isToday) {
-        dateText = 'as of Today';
+        return 'As of: Today';
       } else {
-        dateText = `as of ${timelineDate.toLocaleDateString('en-US', {
+        return `As of: ${timelineDate.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
           year: 'numeric'
@@ -197,7 +200,7 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
       }
     }
 
-    return `${serviceArea.company} ${serviceArea.name} Service ${dateText}`;
+    return 'As of: Today';
   };
 
   // Convert access values for display
@@ -222,26 +225,31 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
 
   return (
     <TooltipProvider>
-      <div data-bottom-sheet className="fixed bottom-0 right-0 z-50 mr-4 mb-4 w-full max-w-lg md:w-[28rem]">
+      <div data-bottom-sheet className="fixed bottom-0 right-0 z-50 mr-4 mb-4 w-full max-w-sm md:w-[32rem]">
         <Card
           ref={cardRef}
           className="shadow-xl border border-white/10 bg-black/50 text-white backdrop-blur-md"
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-            <div className="flex items-center gap-3">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
               <div
-                className="w-4 h-4 rounded-full flex-shrink-0"
+                className="w-4 h-4 rounded-full flex-shrink-0 mt-1"
                 style={{ backgroundColor: companyConfig.color }}
               />
-              <CardTitle className="text-base font-semibold leading-tight">
-                {getTitle()}
-              </CardTitle>
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-base font-semibold leading-tight">
+                  {getServiceName()}
+                </CardTitle>
+                <p className="text-sm text-white/70 mt-0.5">
+                  {getDateText()}
+                </p>
+              </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
             >
               <XIcon className="h-4 w-4" />
             </Button>

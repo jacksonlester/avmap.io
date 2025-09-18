@@ -1,0 +1,5 @@
+City,Access,Booking App,City 1,Start Date,Direct Booking?,Fares?,Service Area,,Status 1,Supervision,Tech Firm,Text,Vehicle Type
+Austin,Waitlist,Robotaxi,Austin,"August 25, 2025",Yes,Yes,Deployments%2026b14f1c8b5c80c595def57f0234e312/Tesla_Austin_August_26_2025_Boundary.geojson,,Deprecated,Safety Attendant,Tesla,,Tesla Model Y
+Atlanta,Public,Lyft,Atlanta,"September 10, 2025",No,Yes,Deployments%2026b14f1c8b5c80c595def57f0234e312/May_Mobility_Atlanta_September_2025_Boundary.geojson,,Active,Safety Driver,May Mobility,,Toyota Sienna
+Phoenix,Public,Waymo,Phoenix,"May 4, 2023",Yes,Yes,Deployments%2026b14f1c8b5c80c595def57f0234e312/Waymo_Phoenix_May_2023_Boundary.geojson,,Deprecated,Autonomous,Waymo,,Jaguar I-Pace
+Austin,Public,Uber,Austin,"March 4, 2025",No,Yes,Deployments%2026b14f1c8b5c80c595def57f0234e312/Waymo_Austin_March_2025_Boundary.geojson,,Deprecated,Autonomous,Waymo,,Jaguar I-Pace

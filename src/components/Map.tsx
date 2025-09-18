@@ -154,6 +154,7 @@ export function Map({
       maxZoom: 18,
       projection: "mercator",
       attributionControl: false, // Disable default attribution
+      logoPosition: "bottom-right",
     });
 
     // Add attribution control in bottom-right corner
