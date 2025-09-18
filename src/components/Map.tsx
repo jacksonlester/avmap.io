@@ -44,6 +44,7 @@ interface MapProps {
   deploymentTransitions?: Map<string, HistoricalServiceArea | null>;
   filters: MapFilters;
   isTimelineMode?: boolean;
+  showHistoricalData?: boolean; // Whether to show historical data regardless of timeline UI state
   selectedArea?: ServiceArea | null; // Currently selected area for focus mode
   onServiceAreaClick: (serviceArea: ServiceArea | null) => void;
   className?: string;
@@ -54,6 +55,16 @@ const convertAccessFilter = (yesNoFilters: string[], actualValue: string) => {
   if (yesNoFilters.length === 0) return true; // No filter applied
   const isPublicAccess = actualValue === 'Public';
   return (yesNoFilters.includes('Yes') && isPublicAccess) || (yesNoFilters.includes('No') && !isPublicAccess);
+};
+
+// Helper function to check platform matches (handles comma-separated values)
+const checkPlatformMatch = (filterPlatforms: string[], areaPlatform: string | undefined) => {
+  if (filterPlatforms.length === 0) return true;
+  if (!areaPlatform) return filterPlatforms.includes('Unknown');
+
+  // Handle comma-separated platforms like "Uber, Waymo"
+  const areaPlatforms = areaPlatform.split(',').map(p => p.trim());
+  return areaPlatforms.some(platform => filterPlatforms.includes(platform));
 };
 
 // Helper function to calculate bounds from any GeoJSON geometry
@@ -123,6 +134,7 @@ export function Map({
   deploymentTransitions,
   filters,
   isTimelineMode = false,
+  showHistoricalData = false,
   selectedArea = null,
   onServiceAreaClick,
   className,
@@ -154,10 +166,10 @@ export function Map({
       maxZoom: 18,
       projection: "mercator",
       attributionControl: false, // Disable default attribution
-      logoPosition: "bottom-right",
+      logoPosition: "top-right",
     });
 
-    // Add attribution control in bottom-right corner
+    // Add attribution control in bottom-right corner, right against bottom edge
     map.current.addControl(new mapboxgl.AttributionControl({
       compact: true
     }), 'bottom-right');
@@ -412,7 +424,7 @@ export function Map({
 
       // In timeline mode, if no historical layers are available (due to missing geojsonPath),
       // fall back to current layers but use historical data for the service area details
-      const allLayers = isTimelineMode && historicalAreaLayers.length === 0
+      const allLayers = showHistoricalData && historicalAreaLayers.length === 0
         ? currentAreaLayers
         : [...currentAreaLayers, ...historicalAreaLayers];
 
@@ -431,7 +443,7 @@ export function Map({
         let clickedArea: ServiceArea | undefined;
 
         // In timeline mode, prefer historical data
-        if (isTimelineMode) {
+        if (showHistoricalData) {
           if (featureId.startsWith('historical-')) {
             // Try to match by checking if any historical area ID is contained in the source
             const matchingHistorical = historicalServiceAreas.find((area) => {
@@ -498,8 +510,8 @@ export function Map({
           .map((feature) => {
             let area: ServiceArea | undefined;
 
-            // In timeline mode, prefer historical data even for current layer clicks
-            if (isTimelineMode) {
+            // When showing historical data, prefer historical data even for current layer clicks
+            if (showHistoricalData) {
               // First check if this is a historical layer
               const sourceId = feature.source as string;
               if (sourceId.startsWith('historical-')) {
@@ -647,7 +659,7 @@ export function Map({
         );
       }
     });
-  }, [serviceAreas, historicalServiceAreas, loadedAreas, onServiceAreaClick, isTimelineMode]);
+  }, [serviceAreas, historicalServiceAreas, loadedAreas, onServiceAreaClick, showHistoricalData]);
 
   // Preload ALL historical service areas at initialization for instant timeline scrubbing
   useEffect(() => {
@@ -751,14 +763,20 @@ export function Map({
   useEffect(() => {
     if (!map.current) return;
 
+    console.log('🔍 CURRENT AREAS VISIBILITY EFFECT TRIGGERED');
+    console.log('   showHistoricalData:', showHistoricalData);
+    console.log('   serviceAreas:', serviceAreas.length);
+    console.log('   selectedArea:', selectedArea?.id || 'null');
+    console.log('   serviceAreas data:', serviceAreas.map(a => `${a.id} (${a.company})`));
+
     const currentMap = map.current;
     const visibilityUpdates: Array<{ layerId: string; visibility: "visible" | "none" }> = [];
 
     // Focus mode: when a service area is selected, only show that one
     const isFocusMode = !!selectedArea;
 
-    if (isTimelineMode) {
-      // Hide current service areas when entering timeline mode
+    if (showHistoricalData) {
+      // Hide current service areas when showing historical data
       serviceAreas.forEach((area) => {
         const fillLayerId = `${area.id}-fill`;
         const lineLayerId = `${area.id}-line`;
@@ -785,8 +803,8 @@ export function Map({
           } else {
             // Normal mode - apply current filters
             const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-            const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
-            const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
+            const platformMatch = checkPlatformMatch(filters.platform, area.platform);
+            const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Autonomous');
             const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
             const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
             const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
@@ -826,14 +844,18 @@ export function Map({
         console.warn(`Failed to update visibility for ${layerId}:`, error);
       }
     });
-  }, [isTimelineMode, serviceAreas, filters, selectedArea]);
+  }, [showHistoricalData, serviceAreas, filters, selectedArea]);
 
   // Update historical areas visibility when timeline data changes (not mode toggle)
   useEffect(() => {
-    if (!map.current || !isTimelineMode) return;
+    if (!map.current || !showHistoricalData) return;
 
-    console.log('Timeline mode: Updating historical visibility. Historical areas:', historicalServiceAreas.length);
-    console.log('Timeline mode: Loaded historical areas:', loadedHistoricalAreas.current.size);
+    console.log('🔍 HISTORICAL VISIBILITY EFFECT TRIGGERED');
+    console.log('   showHistoricalData:', showHistoricalData);
+    console.log('   historicalServiceAreas:', historicalServiceAreas.length);
+    console.log('   selectedArea:', selectedArea?.id || 'null');
+    console.log('   historicalServiceAreas data:', historicalServiceAreas.map(a => `${a.id} (${a.company})`));
+    console.log('   Loaded historical areas:', loadedHistoricalAreas.current.size);
 
     const currentMap = map.current;
     const visibilityUpdates: Array<{ layerId: string; visibility: "visible" | "none" }> = [];
@@ -904,7 +926,7 @@ export function Map({
         }
       });
     });
-  }, [isTimelineMode, historicalServiceAreas, filters, selectedArea]);
+  }, [showHistoricalData, historicalServiceAreas, filters, selectedArea]);
 
   // Handle smooth transitions for deployment morphing
   useEffect(() => {
@@ -929,7 +951,7 @@ export function Map({
       if (activeArea) {
         // Filter by all available filters
         const companyMatch = filters.companies.length === 0 || filters.companies.includes(activeArea.company);
-        const platformMatch = !activeArea.platform || filters.platform.length === 0 || filters.platform.includes(activeArea.platform);
+        const platformMatch = checkPlatformMatch(filters.platform, activeArea.platform);
         const supervisionMatch = !activeArea.supervision || filters.supervision.length === 0 || filters.supervision.includes(activeArea.supervision);
         const accessMatch = !activeArea.access || convertAccessFilter(filters.access, activeArea.access);
         const faresMatch = !activeArea.fares || filters.fares.length === 0 || filters.fares.includes(activeArea.fares);

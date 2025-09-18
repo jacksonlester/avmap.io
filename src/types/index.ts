@@ -4,12 +4,13 @@ export interface ServiceArea {
   company: string;
   platform: string;
   access: 'Public' | 'Waitlist';
-  supervision: 'Fully Autonomous' | 'Safety Driver' | 'Safety Attendant';
+  supervision: 'Autonomous' | 'Safety Driver' | 'Safety Attendant';
   fares: 'Yes' | 'No';
   directBooking: 'Yes' | 'No';
   status: 'Active' | 'Testing' | 'Deprecated';
   geojsonPath: string;
   lastUpdated: string;
+  vehicleTypes?: string;
 }
 
 export interface HistoricalServiceArea {
@@ -22,12 +23,13 @@ export interface HistoricalServiceArea {
   company: string;
   platform: string;
   access: 'Public' | 'Waitlist';
-  supervision: 'Fully Autonomous' | 'Safety Driver' | 'Safety Attendant';
+  supervision: 'Autonomous' | 'Safety Driver' | 'Safety Attendant';
   fares: 'Yes' | 'No';
   directBooking: 'Yes' | 'No';
   status: 'Active' | 'Testing' | 'Deprecated';
   geojsonPath: string;
   lastUpdated?: string;
+  vehicleTypes?: string;
   geojson?: {
     type: 'FeatureCollection';
     features: Array<{
@@ -105,6 +107,9 @@ export const SERVICE_LINKS: Record<string, ServiceLink[]> = {
   ],
   'Waymo Los Angeles': [
     { label: 'Service information from Waymo', url: 'https://waymo.com/rides/los-angeles/', type: 'operator' }
+  ],
+  'Waymo Silicon Valley': [
+    { label: 'Service information from Google', url: 'https://support.google.com/waymo/answer/15976820?hl=en', type: 'operator' }
   ],
   'Zoox Las Vegas': [
     { label: 'Service information from Zoox', url: 'https://zoox.com/las-vegas/', type: 'operator' }

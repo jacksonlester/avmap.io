@@ -42,11 +42,17 @@ export function TimeSlider({
   className,
 }: TimeSliderProps) {
   const [isMinimized, setIsMinimized] = useState(true);
-  const [position, setPosition] = useState({ x: 76, y: 28 }); // Position to the right of button (16px left + 48px button + 12px gap)
+  const [position, setPosition] = useState({ x: 76, y: 73 }); // Position to the right of button at same vertical level
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+
+  // Sync internal minimized state with external timeline mode
+  useEffect(() => {
+    setIsMinimized(!isTimelineMode);
+  }, [isTimelineMode]);
+
   // Convert dates to slider values (0-100)
   const totalDuration = endDate.getTime() - startDate.getTime();
   const currentProgress = ((currentDate.getTime() - startDate.getTime()) / totalDuration) * 100;
@@ -56,9 +62,15 @@ export function TimeSlider({
     onDateChange(new Date(newTimestamp));
   };
 
-  // Dragging functionality for desktop
+  // Dragging functionality for desktop - only when clicking the handle
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile || isMinimized) return;
+
+    // Only start dragging if clicking the grip handle specifically
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-grip-handle]')) {
+      return;
+    }
 
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -99,34 +111,24 @@ export function TimeSlider({
     };
   }, [isDragging, dragOffset]);
 
-  // Mobile version with Sheet
+  // Mobile version with Sheet - controlled externally via isTimelineMode
   if (isMobile) {
     return (
-      <Sheet>
-        <SheetTrigger asChild>
-          <TooltipProvider delayDuration={300}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  data-timeline-container
-                  className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-                  style={{ left: "16px", bottom: "73px" }}
-                >
-                  <ChangeDateIcon className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Open Timeline</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </SheetTrigger>
+      <Sheet open={isTimelineMode} onOpenChange={(open) => {
+        if (onTimelineModeChange) {
+          onTimelineModeChange(open);
+        }
+      }}>
         <SheetContent side="bottom" className="h-32 p-0">
           <div className="p-4">
             <div className="flex items-center gap-4">
               {/* Start date */}
               <span className="text-xs text-muted-foreground whitespace-nowrap">
-                Oct 8, 2020
+                {startDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
               </span>
 
               {/* Timeline slider with traveling date */}
@@ -169,32 +171,9 @@ export function TimeSlider({
     );
   }
 
-  // Minimized FAB - positioned at bottom left, styled like filter button
+  // No standalone button - timeline is opened via the date chip
   if (isMinimized) {
-    return (
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              data-timeline-container
-              onClick={() => {
-                setIsMinimized(false);
-                if (onTimelineModeChange && !isTimelineMode) {
-                  onTimelineModeChange(true);
-                }
-              }}
-              className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
-              style={{ left: "16px", bottom: "73px" }}
-            >
-              <ChangeDateIcon className="h-5 w-5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            <p>Open Timeline</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
+    return null;
   }
 
   // Desktop floating card - simplified timeline
@@ -209,7 +188,7 @@ export function TimeSlider({
       )}
       style={{
         left: `${position.x}px`,
-        bottom: `${120}px`, // Higher up on the page - about 120px from bottom
+        bottom: `${position.y}px`, // Position at same level as the button
         width: "min(600px, 90vw)",
         height: "auto",
       }}
@@ -218,13 +197,18 @@ export function TimeSlider({
         <div className="flex items-center gap-4">
           {/* Drag handle */}
           <GripVertical
-            className="h-4 w-4 cursor-grab active:cursor-grabbing text-white/50 hover:text-white"
+            data-grip-handle
+            className="h-4 w-4 text-white/50 hover:text-white cursor-grab active:cursor-grabbing"
             onMouseDown={handleMouseDown}
           />
 
           {/* Start date */}
           <span className="text-xs text-white/70 whitespace-nowrap">
-            Oct 8, 2020
+            {startDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })}
           </span>
 
           {/* Timeline slider with traveling date */}

@@ -9,6 +9,12 @@ import { ServiceArea, ServiceAreaData, MapFilters, HistoricalServiceArea } from 
 import { getAllServicesAtDate, getCurrentServiceAreas, getAllHistoricalServiceStates } from '@/lib/eventService';
 import { loadGeometry } from '@/lib/storageService';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,7 +25,7 @@ const Index = () => {
   const [taxonomy] = useState<Taxonomy>({
     companies: ['Waymo', 'Tesla', 'Zoox', 'May Mobility'],
     platform: ['Waymo', 'Uber', 'Lyft', 'Robotaxi', 'Zoox'],
-    supervision: ['Fully Autonomous', 'Safety Driver', 'Safety Attendant'],
+    supervision: ['Autonomous', 'Safety Driver', 'Safety Attendant'],
     access: ['Yes', 'No'],
     fares: ['Yes', 'No'],
     directBooking: ['Yes', 'No']
@@ -30,7 +36,7 @@ const Index = () => {
   const [filters, setFilters] = useState<FiltersState>(() => {
     const allCompanies = ['Waymo', 'Tesla', 'Zoox', 'May Mobility'];
     const allPlatforms = ['Waymo', 'Uber', 'Lyft', 'Robotaxi', 'Zoox'];
-    const allSupervision = ['Fully Autonomous', 'Safety Driver', 'Safety Attendant'];
+    const allSupervision = ['Autonomous', 'Safety Driver', 'Safety Attendant'];
     const allAccess = ['Yes', 'No'];
     const allFares = ['Yes', 'No'];
     const allDirectBooking = ['Yes', 'No'];
@@ -166,9 +172,9 @@ const Index = () => {
     }
   }, [isTimelineMode, currentTimelineDate, activeHistoricalAreas]);
 
-  // Get date range for timeline - override start date to Oct 8, 2020
+  // Get date range for timeline - start from first service on April 25, 2017
   const dateRange = {
-    start: new Date('2020-10-08'),
+    start: new Date('2017-04-25'),
     end: new Date() // Today
   };
 
@@ -176,11 +182,7 @@ const Index = () => {
   const handleTimelineToggle = () => {
     const newTimelineMode = !isTimelineMode;
     setIsTimelineMode(newTimelineMode);
-
-    // When closing timeline mode, reset to today
-    if (!newTimelineMode) {
-      setCurrentTimelineDate(new Date());
-    }
+    // Note: Timeline date persists when closed (no longer resets to today)
   };
 
   const handleTimelineDateChange = (date: Date) => {
@@ -221,7 +223,7 @@ const Index = () => {
   return (
     <div className="min-h-screen w-screen bg-background text-foreground">
       {/* Fixed header */}
-      <Header />
+      <Header isMobile={isMobile} />
       
       {/* Main content below header */}
       <main
@@ -241,6 +243,7 @@ const Index = () => {
             deploymentTransitions={deploymentTransitions}
             filters={filters}
             isTimelineMode={isTimelineMode}
+            showHistoricalData={currentTimelineDate.toDateString() !== new Date().toDateString()}
             selectedArea={selectedArea}
             onServiceAreaClick={handleServiceAreaClick}
             className="w-full h-full"
@@ -265,6 +268,44 @@ const Index = () => {
         isTimelineMode={isTimelineMode}
         onTimelineModeChange={setIsTimelineMode}
       />
+
+      {/* Timeline Date Selector - interactive button to open timeline */}
+      {(() => {
+        // Only show when timeline UI is closed
+        if (isTimelineMode) return null;
+
+        const today = new Date();
+        const isToday = currentTimelineDate.toDateString() === today.toDateString();
+
+        const dateText = isToday ? 'Today' : currentTimelineDate.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        const handleTimelineOpen = () => {
+          setIsTimelineMode(true);
+        };
+
+        return (
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={handleTimelineOpen}
+                  className="fixed z-50 px-4 py-2 rounded-full text-sm font-medium shadow-lg backdrop-blur-md border border-white/10 bg-black/50 text-white/90 hover:bg-black/60 hover:text-white transition-all cursor-pointer"
+                  style={{ left: "16px", bottom: "73px" }}
+                >
+                  {dateText}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Open Timeline</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      })()}
 
       {/* Bottom Sheet */}
       <BottomSheet

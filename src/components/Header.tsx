@@ -18,9 +18,6 @@ export function Header({ onToggleFilters, isMobile = false, showFilters = false 
 
   const navItems = [
     { to: "/", label: "Map" },
-    { to: "/companies", label: "Companies" },
-    { to: "/cities", label: "Cities" },
-    { to: "/news", label: "News" },
     { to: "/about", label: "About" },
   ];
 
@@ -40,15 +37,6 @@ export function Header({ onToggleFilters, isMobile = false, showFilters = false 
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium shrink-0">
-            <Link to="/companies" className="text-foreground/60 hover:text-foreground transition-colors">
-              Companies
-            </Link>
-            <Link to="/cities" className="text-foreground/60 hover:text-foreground transition-colors">
-              Cities
-            </Link>
-            <Link to="/news" className="text-foreground/60 hover:text-foreground transition-colors">
-              News
-            </Link>
             <Link to="/about" className="text-foreground/60 hover:text-foreground transition-colors">
               About
             </Link>
@@ -56,20 +44,6 @@ export function Header({ onToggleFilters, isMobile = false, showFilters = false 
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile Filter Toggle - only show on map page */}
-          {isMobile && location.pathname === "/" && (
-            <Button 
-              variant={showFilters ? "default" : "outline"}
-              size="sm"
-              onClick={onToggleFilters}
-              className="md:hidden"
-            >
-              {showFilters ? <X className="h-4 w-4" /> : <FilterIcon className="h-4 w-4" />}
-              <span className="sr-only">
-                {showFilters ? "Close filters" : "Open filters"}
-              </span>
-            </Button>
-          )}
 
           {/* Mobile Navigation Menu */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

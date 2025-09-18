@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ServiceArea, COMPANY_COLORS, HistoricalServiceArea, SERVICE_LINKS, ServiceLink } from "@/types";
@@ -40,20 +40,35 @@ const SERVICE_METADATA = {
     tooltip: "Whether the service charges fares",
     icon: DollarSign
   },
-  publicAccess: {
-    label: "Public Access?",
-    tooltip: "Whether the service is available to the general public",
-    icon: Users
-  },
   directBooking: {
     label: "Direct Booking?",
     tooltip: "Whether riders can request an AV directly or only receive one by chance through a larger fleet",
     icon: MousePointer
+  },
+  vehicleTypes: {
+    label: "Vehicles",
+    tooltip: "The types of vehicles used in this service",
+    icon: Car
   }
 };
 
 export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = false, timelineDate }: BottomSheetProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+
+  // Debug logging
+  React.useEffect(() => {
+    if (serviceArea && isOpen) {
+      console.log('BottomSheet received serviceArea:', {
+        id: serviceArea.id,
+        name: serviceArea.name,
+        company: serviceArea.company,
+        vehicleTypes: serviceArea.vehicleTypes,
+        vehicle_types: (serviceArea as any).vehicle_types,
+        allKeys: Object.keys(serviceArea),
+        fullObject: serviceArea
+      });
+    }
+  }, [serviceArea, isOpen]);
 
   // Get historically accurate data for timeline mode with debouncing
   const [historicallyAccurateArea, setHistoricallyAccurateArea] = useState<ServiceArea | HistoricalServiceArea | null>(serviceArea);
@@ -184,7 +199,7 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
 
   // Get the date text (second line)
   const getDateText = () => {
-    if (isTimelineMode && timelineDate) {
+    if (timelineDate) {
       // Check if timeline date is today
       const today = new Date();
       const isToday = timelineDate.toDateString() === today.toDateString();
@@ -210,17 +225,24 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
     return access;
   };
 
-  const getPublicAccessDisplay = (access: string) => {
-    if (access === 'Public') return 'Yes';
-    if (access === 'Waitlist') return 'No';
-    return access === 'Yes' ? 'Yes' : 'No';
-  };
 
 
   // Helper function to get field value or N/A
   const getFieldValue = (field: keyof (ServiceArea | HistoricalServiceArea), fallback: string = 'N/A') => {
     if (!historicallyAccurateArea) return 'N/A';
-    return (historicallyAccurateArea as any)[field] || fallback;
+    const value = (historicallyAccurateArea as any)[field];
+
+    // Debug logging for vehicleTypes
+    if (field === 'vehicleTypes') {
+      console.log('Getting vehicleTypes:', {
+        field,
+        value,
+        historicallyAccurateArea,
+        allKeys: Object.keys(historicallyAccurateArea)
+      });
+    }
+
+    return value || fallback;
   };
 
   return (
@@ -265,7 +287,7 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
             {/* Supervision */}
             <ServiceField
               metadata={SERVICE_METADATA.supervision}
-              value={getFieldValue('supervision', 'Fully Autonomous')}
+              value={getFieldValue('supervision', 'Autonomous')}
             />
 
             {/* Service Availability */}
@@ -280,16 +302,16 @@ export function BottomSheet({ serviceArea, isOpen, onClose, isTimelineMode = fal
               value={getFieldValue('fares', 'Yes')}
             />
 
-            {/* Public Access */}
-            <ServiceField
-              metadata={SERVICE_METADATA.publicAccess}
-              value={historicallyAccurateArea ? getPublicAccessDisplay(getFieldValue('access', 'Public')) : 'N/A'}
-            />
-
             {/* Direct Booking */}
             <ServiceField
               metadata={SERVICE_METADATA.directBooking}
               value={getFieldValue('directBooking', 'Yes')}
+            />
+
+            {/* Vehicle Types */}
+            <ServiceField
+              metadata={SERVICE_METADATA.vehicleTypes}
+              value={getFieldValue('vehicleTypes', 'N/A')}
             />
 
             {/* Service Links - Static, don't change with timeline */}

@@ -67,7 +67,7 @@ export function FiltersOverlay({
   const filterOptions = page === "map" ? {
     companies: ["Waymo", "Tesla", "Zoox", "May Mobility"],
     platform: ["Waymo", "Uber", "Lyft", "Robotaxi", "Zoox"],
-    supervision: ["Fully Autonomous", "Safety Driver", "Safety Attendant"],
+    supervision: ["Autonomous", "Safety Driver", "Safety Attendant"],
     access: ["Yes", "No"],
     fares: ["Yes", "No"],
     directBooking: ["Yes", "No"]
