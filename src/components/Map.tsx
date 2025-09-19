@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { ServiceArea, MapFilters, COMPANY_COLORS, HistoricalServiceArea } from "@/types";
+import {
+  ServiceArea,
+  MapFilters,
+  COMPANY_COLORS,
+  HistoricalServiceArea,
+} from "@/types";
 import { toast } from "sonner";
 import { ServiceSelector } from "./ServiceSelector";
 import { createRoot } from "react-dom/client";
@@ -22,7 +27,7 @@ const popupStyle = `
 `;
 
 // Inject the styles
-if (typeof document !== 'undefined') {
+if (typeof document !== "undefined") {
   const styleSheet = document.createElement("style");
   styleSheet.innerText = popupStyle;
   document.head.appendChild(styleSheet);
@@ -53,52 +58,65 @@ interface MapProps {
 // Helper function to convert Yes/No filters to actual data values
 const convertAccessFilter = (yesNoFilters: string[], actualValue: string) => {
   if (yesNoFilters.length === 0) return true; // No filter applied
-  const isPublicAccess = actualValue === 'Public';
-  return (yesNoFilters.includes('Yes') && isPublicAccess) || (yesNoFilters.includes('No') && !isPublicAccess);
+  const isPublicAccess = actualValue === "Public";
+  return (
+    (yesNoFilters.includes("Yes") && isPublicAccess) ||
+    (yesNoFilters.includes("No") && !isPublicAccess)
+  );
 };
 
 // Helper function to check platform matches (handles comma-separated values)
-const checkPlatformMatch = (filterPlatforms: string[], areaPlatform: string | undefined) => {
+const checkPlatformMatch = (
+  filterPlatforms: string[],
+  areaPlatform: string | undefined
+) => {
   if (filterPlatforms.length === 0) return true;
-  if (!areaPlatform) return filterPlatforms.includes('Unknown');
+  if (!areaPlatform) return filterPlatforms.includes("Unknown");
 
   // Handle comma-separated platforms like "Uber, Waymo"
-  const areaPlatforms = areaPlatform.split(',').map(p => p.trim());
-  return areaPlatforms.some(platform => filterPlatforms.includes(platform));
+  const areaPlatforms = areaPlatform.split(",").map((p) => p.trim());
+  return areaPlatforms.some((platform) => filterPlatforms.includes(platform));
 };
 
 // Helper function to calculate bounds from any GeoJSON geometry
-const calculateGeometryBounds = (geometry: GeoJSON.Geometry): mapboxgl.LngLatBounds => {
+const calculateGeometryBounds = (
+  geometry: GeoJSON.Geometry
+): mapboxgl.LngLatBounds => {
   const bounds = new mapboxgl.LngLatBounds();
 
   const addCoordinatesToBounds = (coords: unknown) => {
-    if (Array.isArray(coords) && coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+    if (
+      Array.isArray(coords) &&
+      coords.length >= 2 &&
+      typeof coords[0] === "number" &&
+      typeof coords[1] === "number"
+    ) {
       // This is a coordinate pair [lng, lat]
       bounds.extend(coords as [number, number]);
     } else if (Array.isArray(coords)) {
       // This is an array of coordinates or coordinate arrays
-      coords.forEach(coord => addCoordinatesToBounds(coord));
+      coords.forEach((coord) => addCoordinatesToBounds(coord));
     }
   };
 
   // Handle different geometry types
   switch (geometry.type) {
-    case 'Point':
+    case "Point":
       bounds.extend(geometry.coordinates as [number, number]);
       break;
-    case 'LineString':
-    case 'MultiPoint':
+    case "LineString":
+    case "MultiPoint":
       addCoordinatesToBounds(geometry.coordinates);
       break;
-    case 'Polygon':
-    case 'MultiLineString':
+    case "Polygon":
+    case "MultiLineString":
       addCoordinatesToBounds(geometry.coordinates);
       break;
-    case 'MultiPolygon':
+    case "MultiPolygon":
       addCoordinatesToBounds(geometry.coordinates);
       break;
-    case 'GeometryCollection':
-      geometry.geometries.forEach(geom => {
+    case "GeometryCollection":
+      geometry.geometries.forEach((geom) => {
         const geomBounds = calculateGeometryBounds(geom);
         bounds.extend(geomBounds.getNorthEast());
         bounds.extend(geomBounds.getSouthWest());
@@ -110,7 +128,10 @@ const calculateGeometryBounds = (geometry: GeoJSON.Geometry): mapboxgl.LngLatBou
 };
 
 // Helper function to fit bounds with responsive padding
-const fitBoundsWithResponsivePadding = (map: mapboxgl.Map, bounds: mapboxgl.LngLatBounds) => {
+const fitBoundsWithResponsivePadding = (
+  map: mapboxgl.Map,
+  bounds: mapboxgl.LngLatBounds
+) => {
   const container = map.getContainer();
   const containerWidth = container.clientWidth;
   const containerHeight = container.clientHeight;
@@ -123,7 +144,7 @@ const fitBoundsWithResponsivePadding = (map: mapboxgl.Map, bounds: mapboxgl.LngL
 
   map.fitBounds(bounds, {
     padding: padding,
-    duration: 1000 // Smooth animation
+    duration: 1000, // Smooth animation
   });
 };
 
@@ -143,7 +164,9 @@ export function Map({
   const map = useRef<mapboxgl.Map | null>(null);
   const loadedAreas = useRef<Set<string>>(new Set());
   const loadedHistoricalAreas = useRef<Set<string>>(new Set());
-  const [deploymentSources, setDeploymentSources] = useState<Set<string>>(new Set());
+  const [deploymentSources, setDeploymentSources] = useState<Set<string>>(
+    new Set()
+  );
   const activePopup = useRef<mapboxgl.Popup | null>(null);
 
   // Helper function to toggle service area bounds lock
@@ -170,9 +193,12 @@ export function Map({
     });
 
     // Add attribution control in bottom-right corner, right against bottom edge
-    map.current.addControl(new mapboxgl.AttributionControl({
-      compact: true
-    }), 'bottom-right');
+    map.current.addControl(
+      new mapboxgl.AttributionControl({
+        compact: true,
+      }),
+      "bottom-right"
+    );
 
     // Remove any bounds restrictions by default
     map.current.setMaxBounds(null);
@@ -304,7 +330,6 @@ export function Map({
   useEffect(() => {
     if (!map.current) return;
 
-
     const currentMap = map.current;
 
     // Load all service areas that haven't been loaded yet
@@ -415,18 +440,26 @@ export function Map({
           const hasGeojsonPath = !!area.geojsonPath;
           const historicalId = `historical-${area.id}-${area.geojsonPath}`;
           const isLoaded = loadedHistoricalAreas.current.has(historicalId);
-          console.log(`Historical area ${area.id}: hasGeojsonPath=${hasGeojsonPath}, isLoaded=${isLoaded}`);
+          console.log(
+            `Historical area ${area.id}: hasGeojsonPath=${hasGeojsonPath}, isLoaded=${isLoaded}`
+          );
           return hasGeojsonPath && isLoaded;
         })
         .map((area) => `historical-${area.id}-${area.geojsonPath}-fill`);
 
-      console.log('Timeline mode click - Current layers:', currentAreaLayers.length, 'Historical layers:', historicalAreaLayers.length);
+      console.log(
+        "Timeline mode click - Current layers:",
+        currentAreaLayers.length,
+        "Historical layers:",
+        historicalAreaLayers.length
+      );
 
       // In timeline mode, if no historical layers are available (due to missing geojsonPath),
       // fall back to current layers but use historical data for the service area details
-      const allLayers = showHistoricalData && historicalAreaLayers.length === 0
-        ? currentAreaLayers
-        : [...currentAreaLayers, ...historicalAreaLayers];
+      const allLayers =
+        showHistoricalData && historicalAreaLayers.length === 0
+          ? currentAreaLayers
+          : [...currentAreaLayers, ...historicalAreaLayers];
 
       const features = currentMap.queryRenderedFeatures(e.point, {
         layers: allLayers,
@@ -444,7 +477,7 @@ export function Map({
 
         // In timeline mode, prefer historical data
         if (showHistoricalData) {
-          if (featureId.startsWith('historical-')) {
+          if (featureId.startsWith("historical-")) {
             // Try to match by checking if any historical area ID is contained in the source
             const matchingHistorical = historicalServiceAreas.find((area) => {
               return featureId.includes(area.id);
@@ -453,16 +486,22 @@ export function Map({
             if (matchingHistorical) {
               clickedArea = {
                 ...matchingHistorical,
-                lastUpdated: matchingHistorical.lastUpdated || matchingHistorical.effectiveDate
+                lastUpdated:
+                  matchingHistorical.lastUpdated ||
+                  matchingHistorical.effectiveDate,
               } as ServiceArea;
             }
           } else {
             // For current layers in timeline mode, try to find matching historical data
-            const matchingHistorical = historicalServiceAreas.find((area) => area.id === featureId);
+            const matchingHistorical = historicalServiceAreas.find(
+              (area) => area.id === featureId
+            );
             if (matchingHistorical) {
               clickedArea = {
                 ...matchingHistorical,
-                lastUpdated: matchingHistorical.lastUpdated || matchingHistorical.effectiveDate
+                lastUpdated:
+                  matchingHistorical.lastUpdated ||
+                  matchingHistorical.effectiveDate,
               } as ServiceArea;
             } else {
               // Fall back to current service area data
@@ -476,7 +515,7 @@ export function Map({
 
         // If still not found, check historical areas (for backwards compatibility)
         if (!clickedArea) {
-          if (featureId.startsWith('historical-')) {
+          if (featureId.startsWith("historical-")) {
             // Try to match by checking if any historical area ID is contained in the source
             const matchingHistorical = historicalServiceAreas.find((area) => {
               return featureId.includes(area.id);
@@ -485,7 +524,9 @@ export function Map({
             if (matchingHistorical) {
               clickedArea = {
                 ...matchingHistorical,
-                lastUpdated: matchingHistorical.lastUpdated || matchingHistorical.effectiveDate
+                lastUpdated:
+                  matchingHistorical.lastUpdated ||
+                  matchingHistorical.effectiveDate,
               } as ServiceArea;
             }
           }
@@ -501,10 +542,19 @@ export function Map({
         // Multiple areas - clear any existing selection first, then show service selector in popup
         onServiceAreaClick(null);
 
-        console.log('Multiple areas clicked - features found:', features.length);
-        console.log('Available service areas:', serviceAreas.map(a => a.id));
-        console.log('Available historical areas:', historicalServiceAreas.map(a => a.id));
-        console.log('Is timeline mode:', isTimelineMode);
+        console.log(
+          "Multiple areas clicked - features found:",
+          features.length
+        );
+        console.log(
+          "Available service areas:",
+          serviceAreas.map((a) => a.id)
+        );
+        console.log(
+          "Available historical areas:",
+          historicalServiceAreas.map((a) => a.id)
+        );
+        console.log("Is timeline mode:", isTimelineMode);
 
         const overlappingAreas = features
           .map((feature) => {
@@ -514,87 +564,125 @@ export function Map({
             if (showHistoricalData) {
               // First check if this is a historical layer
               const sourceId = feature.source as string;
-              if (sourceId.startsWith('historical-')) {
+              if (sourceId.startsWith("historical-")) {
                 // Extract original ID from historical ID format
                 // Format: historical-{id}-{geojsonPath}
                 // The geojsonPath often contains the ID again, so we need to find the original service
                 console.log(`Parsing historical source: ${sourceId}`);
 
                 // Try to match against available historical areas by checking if their ID is contained in the source
-                const matchingHistorical = historicalServiceAreas.find((historicalArea) => {
-                  const isMatch = sourceId.includes(historicalArea.id);
-                  console.log(`Checking ${historicalArea.id} against ${sourceId}: ${isMatch}`);
-                  return isMatch;
-                });
+                const matchingHistorical = historicalServiceAreas.find(
+                  (historicalArea) => {
+                    const isMatch = sourceId.includes(historicalArea.id);
+                    console.log(
+                      `Checking ${historicalArea.id} against ${sourceId}: ${isMatch}`
+                    );
+                    return isMatch;
+                  }
+                );
 
                 if (matchingHistorical) {
-                  console.log(`Found matching historical area: ${matchingHistorical.id}`);
+                  console.log(
+                    `Found matching historical area: ${matchingHistorical.id}`
+                  );
                   area = {
                     ...matchingHistorical,
-                    lastUpdated: matchingHistorical.lastUpdated || matchingHistorical.effectiveDate
+                    lastUpdated:
+                      matchingHistorical.lastUpdated ||
+                      matchingHistorical.effectiveDate,
                   } as ServiceArea;
                 }
               } else {
                 // For current layers in timeline mode, try to find matching historical data
-                const matchingHistorical = historicalServiceAreas.find((historicalArea) => historicalArea.id === feature.source);
+                const matchingHistorical = historicalServiceAreas.find(
+                  (historicalArea) => historicalArea.id === feature.source
+                );
                 if (matchingHistorical) {
                   area = {
                     ...matchingHistorical,
-                    lastUpdated: matchingHistorical.lastUpdated || matchingHistorical.effectiveDate
+                    lastUpdated:
+                      matchingHistorical.lastUpdated ||
+                      matchingHistorical.effectiveDate,
                   } as ServiceArea;
                 } else {
                   // Fall back to current service area data
-                  area = serviceAreas.find((serviceArea) => serviceArea.id === feature.source);
+                  area = serviceAreas.find(
+                    (serviceArea) => serviceArea.id === feature.source
+                  );
                 }
               }
             } else {
               // Normal mode - just find the current service area
-              area = serviceAreas.find((serviceArea) => serviceArea.id === feature.source);
+              area = serviceAreas.find(
+                (serviceArea) => serviceArea.id === feature.source
+              );
             }
 
             // If still not found, check historical areas (for backwards compatibility)
             if (!area) {
               const sourceId = feature.source as string;
-              if (sourceId.startsWith('historical-')) {
+              if (sourceId.startsWith("historical-")) {
                 // Try to match by checking if any historical area ID is contained in the source
-                const matchingHistorical = historicalServiceAreas.find((historicalArea) => {
-                  return sourceId.includes(historicalArea.id);
-                });
+                const matchingHistorical = historicalServiceAreas.find(
+                  (historicalArea) => {
+                    return sourceId.includes(historicalArea.id);
+                  }
+                );
 
                 if (matchingHistorical) {
                   area = {
                     ...matchingHistorical,
-                    lastUpdated: matchingHistorical.lastUpdated || matchingHistorical.effectiveDate
+                    lastUpdated:
+                      matchingHistorical.lastUpdated ||
+                      matchingHistorical.effectiveDate,
                   } as ServiceArea;
                 }
               }
             }
-            console.log(`Feature source: ${feature.source}, found area:`, area ? area.id : 'undefined');
+            console.log(
+              `Feature source: ${feature.source}, found area:`,
+              area ? area.id : "undefined"
+            );
             return { area, feature };
           })
-          .filter((item): item is { area: ServiceArea; feature: mapboxgl.MapboxGeoJSONFeature } => {
-            const hasArea = item.area !== undefined;
-            if (!hasArea) {
-              console.log(`Filtering out feature with source: ${item.feature.source} - no area found`);
+          .filter(
+            (
+              item
+            ): item is {
+              area: ServiceArea;
+              feature: mapboxgl.MapboxGeoJSONFeature;
+            } => {
+              const hasArea = item.area !== undefined;
+              if (!hasArea) {
+                console.log(
+                  `Filtering out feature with source: ${item.feature.source} - no area found`
+                );
+              }
+              return hasArea;
             }
-            return hasArea;
-          });
+          );
 
         // Create popup container
         const popupContainer = document.createElement("div");
 
-        console.log('Overlapping areas for popup:', overlappingAreas.map(item => item.area));
+        console.log(
+          "Overlapping areas for popup:",
+          overlappingAreas.map((item) => item.area)
+        );
 
         // Create React root and render ServiceSelector
         const root = createRoot(popupContainer);
         root.render(
           <ServiceSelector
-            areas={overlappingAreas.map(item => item.area)}
+            areas={overlappingAreas.map((item) => item.area)}
             onSelect={(area) => {
               // Find the corresponding feature for fast bounds calculation
-              const areaWithFeature = overlappingAreas.find(item => item.area.id === area.id);
+              const areaWithFeature = overlappingAreas.find(
+                (item) => item.area.id === area.id
+              );
               if (areaWithFeature) {
-                const geometry = areaWithFeature.feature.geometry as GeoJSON.Geometry;
+                const geometry = areaWithFeature.feature
+                  .geometry as GeoJSON.Geometry;
                 const bounds = calculateGeometryBounds(geometry);
                 fitBoundsWithResponsivePadding(currentMap, bounds);
               }
@@ -617,28 +705,28 @@ export function Map({
         const clickY = e.point.y;
 
         // Determine best anchor based on click position relative to viewport
-        let anchor: 'top' | 'bottom' | 'left' | 'right' = 'bottom';
+        let anchor: "top" | "bottom" | "left" | "right" = "bottom";
         if (clickY < mapRect.height * 0.3) {
           // Click near top - show popup below
-          anchor = 'top';
+          anchor = "top";
         } else if (clickY > mapRect.height * 0.7) {
           // Click near bottom - show popup above
-          anchor = 'bottom';
+          anchor = "bottom";
         } else if (clickX < mapRect.width * 0.3) {
           // Click near left - show popup to the right
-          anchor = 'left';
+          anchor = "left";
         } else if (clickX > mapRect.width * 0.7) {
           // Click near right - show popup to the left
-          anchor = 'right';
+          anchor = "right";
         }
 
         // Create and show popup with calculated positioning
         const popup = new mapboxgl.Popup({
           closeButton: false,
           offset: 8,
-          className: 'transparent-popup',
+          className: "transparent-popup",
           anchor: anchor,
-          maxWidth: '300px'
+          maxWidth: "300px",
         });
 
         popup
@@ -659,13 +747,22 @@ export function Map({
         );
       }
     });
-  }, [serviceAreas, historicalServiceAreas, loadedAreas, onServiceAreaClick, showHistoricalData]);
+  }, [
+    serviceAreas,
+    historicalServiceAreas,
+    loadedAreas,
+    onServiceAreaClick,
+    showHistoricalData,
+  ]);
 
   // Preload ALL historical service areas at initialization for instant timeline scrubbing
   useEffect(() => {
     if (!map.current || allHistoricalServiceAreas.length === 0) return;
 
-    console.log('Preloading all historical areas into map:', allHistoricalServiceAreas.length);
+    console.log(
+      "Preloading all historical areas into map:",
+      allHistoricalServiceAreas.length
+    );
 
     const currentMap = map.current;
 
@@ -673,7 +770,9 @@ export function Map({
     allHistoricalServiceAreas.forEach(async (area) => {
       // Skip areas without geojsonPath
       if (!area.geojsonPath) {
-        console.warn(`Historical service area ${area.id} has no geojsonPath, skipping...`);
+        console.warn(
+          `Historical service area ${area.id} has no geojsonPath, skipping...`
+        );
         return;
       }
 
@@ -686,13 +785,15 @@ export function Map({
       try {
         // Check if source already exists
         if (currentMap.getSource(historicalId)) {
-          console.log(`Historical source ${historicalId} already exists, skipping...`);
+          console.log(
+            `Historical source ${historicalId} already exists, skipping...`
+          );
           loadedHistoricalAreas.current.add(historicalId);
           return;
         }
 
         const companyConfig = COMPANY_COLORS[area.company];
-        const color = companyConfig?.color || '#666666';
+        const color = companyConfig?.color || "#666666";
 
         // Load GeoJSON from Supabase Storage
         const geojsonData = await loadGeometry(area.geojsonPath);
@@ -740,13 +841,21 @@ export function Map({
         currentMap.on("mouseenter", `${historicalId}-fill`, () => {
           currentMap.getCanvas().style.cursor = "pointer";
           currentMap.setPaintProperty(`${historicalId}-line`, "line-width", 3);
-          currentMap.setPaintProperty(`${historicalId}-fill`, "fill-opacity", 0.5);
+          currentMap.setPaintProperty(
+            `${historicalId}-fill`,
+            "fill-opacity",
+            0.5
+          );
         });
 
         currentMap.on("mouseleave", `${historicalId}-fill`, () => {
           currentMap.getCanvas().style.cursor = "";
           currentMap.setPaintProperty(`${historicalId}-line`, "line-width", 2);
-          currentMap.setPaintProperty(`${historicalId}-fill`, "fill-opacity", 0.3);
+          currentMap.setPaintProperty(
+            `${historicalId}-fill`,
+            "fill-opacity",
+            0.3
+          );
         });
 
         // Mark as loaded
@@ -758,19 +867,24 @@ export function Map({
     });
   }, [allHistoricalServiceAreas]);
 
-
   // Handle timeline mode toggling and focus mode separately from data updates
   useEffect(() => {
     if (!map.current) return;
 
-    console.log('🔍 CURRENT AREAS VISIBILITY EFFECT TRIGGERED');
-    console.log('   showHistoricalData:', showHistoricalData);
-    console.log('   serviceAreas:', serviceAreas.length);
-    console.log('   selectedArea:', selectedArea?.id || 'null');
-    console.log('   serviceAreas data:', serviceAreas.map(a => `${a.id} (${a.company})`));
+    console.log("🔍 CURRENT AREAS VISIBILITY EFFECT TRIGGERED");
+    console.log("   showHistoricalData:", showHistoricalData);
+    console.log("   serviceAreas:", serviceAreas.length);
+    console.log("   selectedArea:", selectedArea?.id || "null");
+    console.log(
+      "   serviceAreas data:",
+      serviceAreas.map((a) => `${a.id} (${a.company})`)
+    );
 
     const currentMap = map.current;
-    const visibilityUpdates: Array<{ layerId: string; visibility: "visible" | "none" }> = [];
+    const visibilityUpdates: Array<{
+      layerId: string;
+      visibility: "visible" | "none";
+    }> = [];
 
     // Focus mode: when a service area is selected, only show that one
     const isFocusMode = !!selectedArea;
@@ -781,7 +895,10 @@ export function Map({
         const fillLayerId = `${area.id}-fill`;
         const lineLayerId = `${area.id}-line`;
 
-        if (currentMap.getLayer(fillLayerId) && currentMap.getLayer(lineLayerId)) {
+        if (
+          currentMap.getLayer(fillLayerId) &&
+          currentMap.getLayer(lineLayerId)
+        ) {
           visibilityUpdates.push(
             { layerId: fillLayerId, visibility: "none" },
             { layerId: lineLayerId, visibility: "none" }
@@ -794,22 +911,47 @@ export function Map({
         const fillLayerId = `${area.id}-fill`;
         const lineLayerId = `${area.id}-line`;
 
-        if (currentMap.getLayer(fillLayerId) && currentMap.getLayer(lineLayerId)) {
+        if (
+          currentMap.getLayer(fillLayerId) &&
+          currentMap.getLayer(lineLayerId)
+        ) {
           let visibility: "visible" | "none" = "none";
 
           if (isFocusMode) {
             // In focus mode, only show the selected area
-            visibility = (area.id === selectedArea.id) ? "visible" : "none";
+            visibility = area.id === selectedArea.id ? "visible" : "none";
           } else {
             // Normal mode - apply current filters
-            const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-            const platformMatch = checkPlatformMatch(filters.platform, area.platform);
-            const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Autonomous');
-            const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
-            const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
-            const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+            const companyMatch =
+              filters.companies.length === 0 ||
+              filters.companies.includes(area.company);
+            const platformMatch = checkPlatformMatch(
+              filters.platform,
+              area.platform
+            );
+            const supervisionMatch =
+              filters.supervision.length === 0 ||
+              filters.supervision.includes(area.supervision || "Autonomous");
+            const accessMatch = convertAccessFilter(
+              filters.access,
+              area.access || "Public"
+            );
+            const faresMatch =
+              filters.fares.length === 0 ||
+              filters.fares.includes(area.fares || "Yes");
+            const directBookingMatch =
+              filters.directBooking.length === 0 ||
+              filters.directBooking.includes(area.directBooking || "Yes");
 
-            visibility = (companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch) ? "visible" : "none";
+            visibility =
+              companyMatch &&
+              platformMatch &&
+              supervisionMatch &&
+              accessMatch &&
+              faresMatch &&
+              directBookingMatch
+                ? "visible"
+                : "none";
           }
 
           visibilityUpdates.push(
@@ -824,7 +966,10 @@ export function Map({
         const fillLayerId = `${historicalId}-fill`;
         const lineLayerId = `${historicalId}-line`;
 
-        if (currentMap.getLayer(fillLayerId) && currentMap.getLayer(lineLayerId)) {
+        if (
+          currentMap.getLayer(fillLayerId) &&
+          currentMap.getLayer(lineLayerId)
+        ) {
           visibilityUpdates.push(
             { layerId: fillLayerId, visibility: "none" },
             { layerId: lineLayerId, visibility: "none" }
@@ -836,7 +981,10 @@ export function Map({
     // Apply visibility changes immediately for mode toggle
     visibilityUpdates.forEach(({ layerId, visibility }) => {
       try {
-        const currentVisibility = currentMap.getLayoutProperty(layerId, "visibility");
+        const currentVisibility = currentMap.getLayoutProperty(
+          layerId,
+          "visibility"
+        );
         if (currentVisibility !== visibility) {
           currentMap.setLayoutProperty(layerId, "visibility", visibility);
         }
@@ -850,15 +998,24 @@ export function Map({
   useEffect(() => {
     if (!map.current || !showHistoricalData) return;
 
-    console.log('🔍 HISTORICAL VISIBILITY EFFECT TRIGGERED');
-    console.log('   showHistoricalData:', showHistoricalData);
-    console.log('   historicalServiceAreas:', historicalServiceAreas.length);
-    console.log('   selectedArea:', selectedArea?.id || 'null');
-    console.log('   historicalServiceAreas data:', historicalServiceAreas.map(a => `${a.id} (${a.company})`));
-    console.log('   Loaded historical areas:', loadedHistoricalAreas.current.size);
+    console.log("🔍 HISTORICAL VISIBILITY EFFECT TRIGGERED");
+    console.log("   showHistoricalData:", showHistoricalData);
+    console.log("   historicalServiceAreas:", historicalServiceAreas.length);
+    console.log("   selectedArea:", selectedArea?.id || "null");
+    console.log(
+      "   historicalServiceAreas data:",
+      historicalServiceAreas.map((a) => `${a.id} (${a.company})`)
+    );
+    console.log(
+      "   Loaded historical areas:",
+      loadedHistoricalAreas.current.size
+    );
 
     const currentMap = map.current;
-    const visibilityUpdates: Array<{ layerId: string; visibility: "visible" | "none" }> = [];
+    const visibilityUpdates: Array<{
+      layerId: string;
+      visibility: "visible" | "none";
+    }> = [];
 
     // Filter historical areas that should be visible at the current timeline date
     const visibleHistoricalAreaIds = new Set<string>();
@@ -873,23 +1030,47 @@ export function Map({
         shouldShow = area.id === selectedArea.id;
       } else {
         // Normal mode - check if area passes filter criteria
-        const companyMatch = filters.companies.length === 0 || filters.companies.includes(area.company);
-        const platformMatch = filters.platform.length === 0 || filters.platform.includes(area.platform || 'Unknown');
-        const supervisionMatch = filters.supervision.length === 0 || filters.supervision.includes(area.supervision || 'Fully Autonomous');
-        const accessMatch = convertAccessFilter(filters.access, area.access || 'Public');
-        const faresMatch = filters.fares.length === 0 || filters.fares.includes(area.fares || 'Yes');
-        const directBookingMatch = filters.directBooking.length === 0 || filters.directBooking.includes(area.directBooking || 'Yes');
+        const companyMatch =
+          filters.companies.length === 0 ||
+          filters.companies.includes(area.company);
+        const platformMatch =
+          filters.platform.length === 0 ||
+          filters.platform.includes(area.platform || "Unknown");
+        const supervisionMatch =
+          filters.supervision.length === 0 ||
+          filters.supervision.includes(area.supervision || "Fully Autonomous");
+        const accessMatch = convertAccessFilter(
+          filters.access,
+          area.access || "Public"
+        );
+        const faresMatch =
+          filters.fares.length === 0 ||
+          filters.fares.includes(area.fares || "Yes");
+        const directBookingMatch =
+          filters.directBooking.length === 0 ||
+          filters.directBooking.includes(area.directBooking || "Yes");
 
-        shouldShow = companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch;
+        shouldShow =
+          companyMatch &&
+          platformMatch &&
+          supervisionMatch &&
+          accessMatch &&
+          faresMatch &&
+          directBookingMatch;
       }
 
       if (shouldShow) {
         // Create the historical ID that was used when loading the area (includes geometry name)
-        visibleHistoricalAreaIds.add(`historical-${area.id}-${area.geojsonPath}`);
+        visibleHistoricalAreaIds.add(
+          `historical-${area.id}-${area.geojsonPath}`
+        );
       }
     });
 
-    console.log('Timeline mode: Areas that should be visible:', visibleHistoricalAreaIds.size);
+    console.log(
+      "Timeline mode: Areas that should be visible:",
+      visibleHistoricalAreaIds.size
+    );
 
     // Prepare visibility updates for ALL loaded historical areas
     loadedHistoricalAreas.current.forEach((historicalId) => {
@@ -900,7 +1081,9 @@ export function Map({
         currentMap.getLayer(fillLayerId) &&
         currentMap.getLayer(lineLayerId)
       ) {
-        const visibility = visibleHistoricalAreaIds.has(historicalId) ? "visible" : "none";
+        const visibility = visibleHistoricalAreaIds.has(historicalId)
+          ? "visible"
+          : "none";
         visibilityUpdates.push(
           { layerId: fillLayerId, visibility },
           { layerId: lineLayerId, visibility }
@@ -916,7 +1099,10 @@ export function Map({
       visibilityUpdates.forEach(({ layerId, visibility }) => {
         try {
           // Only update if visibility actually needs to change
-          const currentVisibility = currentMap.getLayoutProperty(layerId, "visibility");
+          const currentVisibility = currentMap.getLayoutProperty(
+            layerId,
+            "visibility"
+          );
           if (currentVisibility !== visibility) {
             currentMap.setLayoutProperty(layerId, "visibility", visibility);
           }
@@ -930,16 +1116,26 @@ export function Map({
 
   // Handle smooth transitions for deployment morphing
   useEffect(() => {
-    if (!map.current || !isTimelineMode || !deploymentTransitions || deploymentTransitions.size === 0) return;
+    if (
+      !map.current ||
+      !isTimelineMode ||
+      !deploymentTransitions ||
+      deploymentTransitions.size === 0
+    )
+      return;
 
     const currentMap = map.current;
 
     // Enable transitions for smooth morphing
     // Note: setTransition method may not be available in all mapbox versions
-    if ('setTransition' in currentMap) {
-      (currentMap as unknown as { setTransition: (options: { duration: number; delay: number }) => void }).setTransition({
+    if ("setTransition" in currentMap) {
+      (
+        currentMap as unknown as {
+          setTransition: (options: { duration: number; delay: number }) => void;
+        }
+      ).setTransition({
         duration: 300,
-        delay: 0
+        delay: 0,
       });
     }
 
@@ -950,101 +1146,144 @@ export function Map({
 
       if (activeArea) {
         // Filter by all available filters
-        const companyMatch = filters.companies.length === 0 || filters.companies.includes(activeArea.company);
-        const platformMatch = checkPlatformMatch(filters.platform, activeArea.platform);
-        const supervisionMatch = !activeArea.supervision || filters.supervision.length === 0 || filters.supervision.includes(activeArea.supervision);
-        const accessMatch = !activeArea.access || convertAccessFilter(filters.access, activeArea.access);
-        const faresMatch = !activeArea.fares || filters.fares.length === 0 || filters.fares.includes(activeArea.fares);
-        const directBookingMatch = !activeArea.directBooking || filters.directBooking.length === 0 || filters.directBooking.includes(activeArea.directBooking);
+        const companyMatch =
+          filters.companies.length === 0 ||
+          filters.companies.includes(activeArea.company);
+        const platformMatch = checkPlatformMatch(
+          filters.platform,
+          activeArea.platform
+        );
+        const supervisionMatch =
+          !activeArea.supervision ||
+          filters.supervision.length === 0 ||
+          filters.supervision.includes(activeArea.supervision);
+        const accessMatch =
+          !activeArea.access ||
+          convertAccessFilter(filters.access, activeArea.access);
+        const faresMatch =
+          !activeArea.fares ||
+          filters.fares.length === 0 ||
+          filters.fares.includes(activeArea.fares);
+        const directBookingMatch =
+          !activeArea.directBooking ||
+          filters.directBooking.length === 0 ||
+          filters.directBooking.includes(activeArea.directBooking);
 
-        if (companyMatch && platformMatch && supervisionMatch && accessMatch && faresMatch && directBookingMatch) {
+        if (
+          companyMatch &&
+          platformMatch &&
+          supervisionMatch &&
+          accessMatch &&
+          faresMatch &&
+          directBookingMatch
+        ) {
           const companyConfig = COMPANY_COLORS[activeArea.company];
-          const color = companyConfig?.color || '#666666';
+          const color = companyConfig?.color || "#666666";
 
           // Create or update source
           if (!deploymentSources.has(deploymentId)) {
             // Load the geojson for this area
             loadGeometry(activeArea.geojsonPath)
-              .then(geojsonData => {
+              .then((geojsonData) => {
                 // Check if map is still available
                 if (!currentMap || !currentMap.getStyle()) return;
-              // Add source
-              currentMap.addSource(sourceId, {
-                type: "geojson",
-                data: geojsonData as GeoJSON.FeatureCollection,
-              });
+                // Add source
+                currentMap.addSource(sourceId, {
+                  type: "geojson",
+                  data: geojsonData as GeoJSON.FeatureCollection,
+                });
 
-              // Add fill layer
-              currentMap.addLayer({
-                id: fillLayerId,
-                type: "fill",
-                source: sourceId,
-                paint: {
-                  "fill-color": color,
-                  "fill-opacity": 0.3,
-                },
-                layout: {
-                  visibility: "visible",
-                },
-              });
+                // Add fill layer
+                currentMap.addLayer({
+                  id: fillLayerId,
+                  type: "fill",
+                  source: sourceId,
+                  paint: {
+                    "fill-color": color,
+                    "fill-opacity": 0.3,
+                  },
+                  layout: {
+                    visibility: "visible",
+                  },
+                });
 
-              // Add line layer
-              currentMap.addLayer({
-                id: lineLayerId,
-                type: "line",
-                source: sourceId,
-                paint: {
-                  "line-color": color,
-                  "line-width": 2,
-                  "line-opacity": 0.8,
-                },
-                layout: {
-                  visibility: "visible",
-                },
-              });
+                // Add line layer
+                currentMap.addLayer({
+                  id: lineLayerId,
+                  type: "line",
+                  source: sourceId,
+                  paint: {
+                    "line-color": color,
+                    "line-width": 2,
+                    "line-opacity": 0.8,
+                  },
+                  layout: {
+                    visibility: "visible",
+                  },
+                });
 
-              // Add hover effects
-              currentMap.on("mouseenter", fillLayerId, () => {
-                currentMap.getCanvas().style.cursor = "pointer";
-                currentMap.setPaintProperty(lineLayerId, "line-width", 3);
-                currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.5);
-              });
+                // Add hover effects
+                currentMap.on("mouseenter", fillLayerId, () => {
+                  currentMap.getCanvas().style.cursor = "pointer";
+                  currentMap.setPaintProperty(lineLayerId, "line-width", 3);
+                  currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.5);
+                });
 
-              currentMap.on("mouseleave", fillLayerId, () => {
-                currentMap.getCanvas().style.cursor = "";
-                currentMap.setPaintProperty(lineLayerId, "line-width", 2);
-                currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.3);
-              });
+                currentMap.on("mouseleave", fillLayerId, () => {
+                  currentMap.getCanvas().style.cursor = "";
+                  currentMap.setPaintProperty(lineLayerId, "line-width", 2);
+                  currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.3);
+                });
 
-              setDeploymentSources(prev => new Set([...prev, deploymentId]));
-            }).catch(error => {
-              console.error(`Failed to load deployment ${deploymentId}:`, error);
-            });
+                setDeploymentSources(
+                  (prev) => new Set([...prev, deploymentId])
+                );
+              })
+              .catch((error) => {
+                console.error(
+                  `Failed to load deployment ${deploymentId}:`,
+                  error
+                );
+              });
           } else {
             // Update existing source data for smooth morphing
             loadGeometry(activeArea.geojsonPath)
-              .then(geojsonData => {
+              .then((geojsonData) => {
                 // Check if map is still available
                 if (!currentMap || !currentMap.getStyle()) return;
-              const source = currentMap.getSource(sourceId) as mapboxgl.GeoJSONSource;
-              if (source) {
-                source.setData(geojsonData as GeoJSON.FeatureCollection);
-              }
+                const source = currentMap.getSource(
+                  sourceId
+                ) as mapboxgl.GeoJSONSource;
+                if (source) {
+                  source.setData(geojsonData as GeoJSON.FeatureCollection);
+                }
 
-              // Update colors in case company changed
-              if (currentMap.getLayer(fillLayerId)) {
-                currentMap.setPaintProperty(fillLayerId, "fill-color", color);
-                currentMap.setPaintProperty(lineLayerId, "line-color", color);
-              }
+                // Update colors in case company changed
+                if (currentMap.getLayer(fillLayerId)) {
+                  currentMap.setPaintProperty(fillLayerId, "fill-color", color);
+                  currentMap.setPaintProperty(lineLayerId, "line-color", color);
+                }
 
-              // Show layers
-              if (currentMap.getLayer(fillLayerId)) {
-                currentMap.setLayoutProperty(fillLayerId, "visibility", "visible");
-                currentMap.setLayoutProperty(lineLayerId, "visibility", "visible");
-              }
-            }).catch(error => {
-              console.error(`Failed to update deployment ${deploymentId}:`, error);
-            });
+                // Show layers
+                if (currentMap.getLayer(fillLayerId)) {
+                  currentMap.setLayoutProperty(
+                    fillLayerId,
+                    "visibility",
+                    "visible"
+                  );
+                  currentMap.setLayoutProperty(
+                    lineLayerId,
+                    "visibility",
+                    "visible"
+                  );
+                }
+              })
+              .catch((error) => {
+                console.error(
+                  `Failed to update deployment ${deploymentId}:`,
+                  error
+                );
+              });
           }
         } else {
           // Hide if filtered out
@@ -1082,6 +1321,168 @@ export function Map({
       map.current?.on("style.load", () => {
         // Reset loaded areas to trigger re-loading after style change
         loadedAreas.current = new Set();
+        loadedHistoricalAreas.current = new Set();
+
+        // Re-add all previously loaded service areas
+        currentLoadedAreas.forEach(async (areaId) => {
+          const area = serviceAreas.find((a) => a.id === areaId);
+          if (!area || !area.geojsonPath) return;
+
+          try {
+            const geojson = await loadGeometry(area.geojsonPath);
+            const companyConfig = COMPANY_COLORS[area.company];
+            const color = companyConfig.color;
+
+            // Add source
+            map.current?.addSource(area.id, {
+              type: "geojson",
+              data: geojson,
+            });
+
+            // Add fill layer
+            if (!map.current?.getLayer(`${area.id}-fill`)) {
+              map.current?.addLayer({
+                id: `${area.id}-fill`,
+                type: "fill",
+                source: area.id,
+                paint: {
+                  "fill-color": color,
+                  "fill-opacity": 0.3,
+                },
+                layout: {
+                  visibility: "visible",
+                },
+              });
+            }
+
+            // Add line layer
+            if (!map.current?.getLayer(`${area.id}-line`)) {
+              map.current?.addLayer({
+                id: `${area.id}-line`,
+                type: "line",
+                source: area.id,
+                paint: {
+                  "line-color": color,
+                  "line-width": 2,
+                  "line-opacity": 0.8,
+                },
+                layout: {
+                  visibility: "visible",
+                },
+              });
+            }
+
+            // Add hover effects
+            map.current?.on("mouseenter", `${area.id}-fill`, () => {
+              if (map.current) {
+                map.current.getCanvas().style.cursor = "pointer";
+                map.current.setPaintProperty(
+                  `${area.id}-line`,
+                  "line-width",
+                  3
+                );
+                map.current.setPaintProperty(
+                  `${area.id}-fill`,
+                  "fill-opacity",
+                  0.5
+                );
+              }
+            });
+
+            map.current?.on("mouseleave", `${area.id}-fill`, () => {
+              if (map.current) {
+                map.current.getCanvas().style.cursor = "";
+                map.current.setPaintProperty(
+                  `${area.id}-line`,
+                  "line-width",
+                  2
+                );
+                map.current.setPaintProperty(
+                  `${area.id}-fill`,
+                  "fill-opacity",
+                  0.3
+                );
+              }
+            });
+
+            // Mark as loaded
+            loadedAreas.current.add(area.id);
+          } catch (error) {
+            console.error(
+              `Failed to reload area ${area.id} after theme change:`,
+              error
+            );
+          }
+        });
+
+        // Re-add all previously loaded historical service areas
+        const currentLoadedHistoricalAreas = new Set(
+          loadedHistoricalAreas.current
+        );
+        currentLoadedHistoricalAreas.forEach(async (historicalId) => {
+          // Find the historical area by parsing the historicalId
+          const area = allHistoricalServiceAreas.find((a) => {
+            const expectedId = `historical-${a.id}-${a.geojsonPath}`;
+            return expectedId === historicalId;
+          });
+
+          if (!area || !area.geojsonPath) return;
+
+          try {
+            const companyConfig = COMPANY_COLORS[area.company];
+            const color = companyConfig?.color || "#666666";
+
+            // Load GeoJSON from Supabase Storage
+            const geojsonData = await loadGeometry(area.geojsonPath);
+
+            // Add source with loaded geojson
+            map.current?.addSource(historicalId, {
+              type: "geojson",
+              data: geojsonData as GeoJSON.FeatureCollection,
+            });
+
+            // Add fill layer
+            if (!map.current?.getLayer(`${historicalId}-fill`)) {
+              map.current?.addLayer({
+                id: `${historicalId}-fill`,
+                type: "fill",
+                source: historicalId,
+                paint: {
+                  "fill-color": color,
+                  "fill-opacity": 0.3,
+                },
+                layout: {
+                  visibility: "none", // Hidden by default, timeline will control visibility
+                },
+              });
+            }
+
+            // Add line layer
+            if (!map.current?.getLayer(`${historicalId}-line`)) {
+              map.current?.addLayer({
+                id: `${historicalId}-line`,
+                type: "line",
+                source: historicalId,
+                paint: {
+                  "line-color": color,
+                  "line-width": 2,
+                  "line-opacity": 0.8,
+                },
+                layout: {
+                  visibility: "none", // Hidden by default, timeline will control visibility
+                },
+              });
+            }
+
+            // Mark as loaded
+            loadedHistoricalAreas.current.add(historicalId);
+          } catch (error) {
+            console.error(
+              `Failed to reload historical area ${historicalId} after theme change:`,
+              error
+            );
+          }
+        });
       });
     };
 
@@ -1093,7 +1494,7 @@ export function Map({
     });
 
     return () => observer.disconnect();
-  }, [loadedAreas]);
+  }, [loadedAreas, serviceAreas, allHistoricalServiceAreas]);
 
   // Cleanup popup on unmount
   useEffect(() => {

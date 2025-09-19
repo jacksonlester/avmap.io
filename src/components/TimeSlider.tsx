@@ -2,11 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { X, GripVertical, History } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -55,7 +51,8 @@ export function TimeSlider({
 
   // Convert dates to slider values (0-100)
   const totalDuration = endDate.getTime() - startDate.getTime();
-  const currentProgress = ((currentDate.getTime() - startDate.getTime()) / totalDuration) * 100;
+  const currentProgress =
+    ((currentDate.getTime() - startDate.getTime()) / totalDuration) * 100;
 
   const handleSliderChange = (value: number[]) => {
     const newTimestamp = startDate.getTime() + (value[0] / 100) * totalDuration;
@@ -68,7 +65,7 @@ export function TimeSlider({
 
     // Only start dragging if clicking the grip handle specifically
     const target = e.target as HTMLElement;
-    if (!target.closest('[data-grip-handle]')) {
+    if (!target.closest("[data-grip-handle]")) {
       return;
     }
 
@@ -92,7 +89,10 @@ export function TimeSlider({
       );
       const newY = Math.max(
         24,
-        Math.min(window.innerHeight - 100, window.innerHeight - (e.clientY - dragOffset.y))
+        Math.min(
+          window.innerHeight - 100,
+          window.innerHeight - (e.clientY - dragOffset.y)
+        )
       );
 
       setPosition({ x: newX, y: newY });
@@ -114,31 +114,34 @@ export function TimeSlider({
   // Mobile version with Sheet - controlled externally via isTimelineMode
   if (isMobile) {
     return (
-      <Sheet open={isTimelineMode} onOpenChange={(open) => {
-        if (onTimelineModeChange) {
-          onTimelineModeChange(open);
-        }
-      }}>
+      <Sheet
+        open={isTimelineMode}
+        onOpenChange={(open) => {
+          if (onTimelineModeChange) {
+            onTimelineModeChange(open);
+          }
+        }}
+      >
         <SheetContent side="bottom" className="h-32 p-0">
           <div className="p-4">
             <div className="flex items-center gap-4">
               {/* Start date */}
               <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {startDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
+                {startDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
                 })}
               </span>
 
               {/* Timeline slider with traveling date */}
-              <div className="flex-1 relative">
+              <div className="flex-1 relative py-2">
                 <Slider
                   value={[currentProgress]}
                   onValueChange={handleSliderChange}
                   max={100}
                   step={0.1}
-                  className="w-full"
+                  className="w-full [&>*[role=slider]]:bg-primary [&>*[role=slider]]:border-primary [&>*[role=slider]]:shadow-md [&>*[role=slider]]:h-4 [&>*[role=slider]]:w-4"
                 />
                 {/* Traveling date indicator */}
                 <div
@@ -146,10 +149,10 @@ export function TimeSlider({
                   style={{ left: `${currentProgress}%` }}
                 >
                   <span className="text-xs text-foreground bg-background/90 px-2 py-1 rounded whitespace-nowrap shadow-lg border">
-                    {currentDate.toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
+                    {currentDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
                     })}
                   </span>
                 </div>
@@ -204,21 +207,21 @@ export function TimeSlider({
 
           {/* Start date */}
           <span className="text-xs text-white/70 whitespace-nowrap">
-            {startDate.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric'
+            {startDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
             })}
           </span>
 
           {/* Timeline slider with traveling date */}
-          <div className="flex-1 relative">
+          <div className="flex-1 relative py-2">
             <Slider
               value={[currentProgress]}
               onValueChange={handleSliderChange}
               max={100}
               step={0.1}
-              className="w-full"
+              className="w-full [&>*[role=slider]]:bg-white [&>*[role=slider]]:border-white [&>*[role=slider]]:shadow-md [&>*[role=slider]]:h-4 [&>*[role=slider]]:w-4"
             />
             {/* Traveling date indicator - positioned based on slider progress */}
             <div
@@ -226,10 +229,10 @@ export function TimeSlider({
               style={{ left: `${currentProgress}%` }}
             >
               <span className="text-xs text-white bg-black/90 px-2 py-1 rounded whitespace-nowrap shadow-lg">
-                {currentDate.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric'
+                {currentDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
                 })}
               </span>
             </div>
@@ -264,4 +267,3 @@ export function TimeSlider({
     </Card>
   );
 }
-

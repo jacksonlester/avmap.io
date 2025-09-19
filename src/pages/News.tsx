@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useLayoutEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
+import { SiteFooter } from '@/components/SiteFooter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -294,6 +295,8 @@ export default function News() {
         onChange={setFilters}
         taxonomy={taxonomy}
       />
+
+      <SiteFooter />
     </div>
   );
 }
