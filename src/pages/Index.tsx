@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -34,11 +34,51 @@ import {
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
+  // Initialize selected area from URL
   const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
-  const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(
-    new Date()
-  );
-  const [isTimelineMode, setIsTimelineMode] = useState(false);
+
+  // Initialize selected area ID from URL parameter
+  const selectedAreaIdFromUrl = searchParams.get("selected");
+
+  // Initialize timeline date from URL or default to today
+  const [currentTimelineDate, setCurrentTimelineDate] = useState<Date>(() => {
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      const parsedDate = new Date(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        return parsedDate;
+      }
+    }
+    return new Date();
+  });
+
+  const [isTimelineMode, setIsTimelineMode] = useState(true);
+
+  // Map viewport state
+  const [mapViewport, setMapViewport] = useState<{
+    center: [number, number];
+    zoom: number;
+  } | null>(() => {
+    const centerParam = searchParams.get("center");
+    const zoomParam = searchParams.get("zoom");
+
+    if (centerParam && zoomParam) {
+      try {
+        const center = centerParam.split(",").map(Number) as [number, number];
+        const zoom = parseFloat(zoomParam);
+
+        if (center.length === 2 && !isNaN(center[0]) && !isNaN(center[1]) && !isNaN(zoom)) {
+          return { center, zoom };
+        }
+      } catch (error) {
+        console.warn("Failed to parse map viewport from URL:", error);
+      }
+    }
+    return null;
+  });
+
+  // Stabilize initial viewport - only use mapViewport for the initial setup, not for continuous updates
+  const initialViewport = useMemo(() => mapViewport, []);  // Only use the initial value
   const [taxonomy] = useState<Taxonomy>({
     companies: ["Waymo", "Tesla", "Zoox", "May Mobility"],
     platform: ["Waymo", "Uber", "Lyft", "Robotaxi", "Zoox"],
@@ -48,6 +88,12 @@ const Index = () => {
     directBooking: ["Yes", "No"],
   });
   const isMobile = useIsMobile();
+
+  // Memoize showHistoricalData to prevent unnecessary re-renders
+  const showHistoricalData = useMemo(() => {
+    const today = new Date();
+    return currentTimelineDate.toDateString() !== today.toDateString();
+  }, [currentTimelineDate]);
 
   // Initialize filters from URL params with all options checked by default
   const [filters, setFilters] = useState<FiltersState>(() => {
@@ -81,25 +127,25 @@ const Index = () => {
     const loadCurrentServices = async () => {
       try {
         const services = await getCurrentServiceAreas();
-        console.log(
-          "Loaded current services from Supabase:",
-          services.length,
-          services
-        );
-        console.log(
-          "Service areas with geojsonPath:",
-          services.filter((s) => s.geojsonPath).length
-        );
-        console.log(
-          "Service areas without geojsonPath:",
-          services
-            .filter((s) => !s.geojsonPath)
-            .map((s) => ({
-              id: s.id,
-              name: s.name,
-              geojsonPath: s.geojsonPath,
-            }))
-        );
+        // console.log(
+        //   "Loaded current services from Supabase:",
+        //   services.length,
+        //   services
+        // );
+        // console.log(
+        //   "Service areas with geojsonPath:",
+        //   services.filter((s) => s.geojsonPath).length
+        // );
+        // console.log(
+        //   "Service areas without geojsonPath:",
+        //   services
+        //     .filter((s) => !s.geojsonPath)
+        //     .map((s) => ({
+        //       id: s.id,
+        //       name: s.name,
+        //       geojsonPath: s.geojsonPath,
+        //     }))
+        // );
         setServiceAreas(services);
       } catch (error) {
         console.error("Failed to load current service areas:", error);
@@ -112,27 +158,27 @@ const Index = () => {
   useEffect(() => {
     const loadAllHistoricalStates = async () => {
       try {
-        console.log("Loading all historical service states for preloading...");
+        // console.log("Loading all historical service states for preloading...");
         const allStates = await getAllHistoricalServiceStates();
-        console.log(
-          "Loaded all historical states:",
-          allStates.length,
-          allStates
-        );
-        console.log(
-          "Historical areas with geojsonPath:",
-          allStates.filter((s) => s.geojsonPath).length
-        );
-        console.log(
-          "Historical areas without geojsonPath:",
-          allStates
-            .filter((s) => !s.geojsonPath)
-            .map((s) => ({
-              id: s.id,
-              name: s.name,
-              geojsonPath: s.geojsonPath,
-            }))
-        );
+        // console.log(
+        //   "Loaded all historical states:",
+        //   allStates.length,
+        //   allStates
+        // );
+        // console.log(
+        //   "Historical areas with geojsonPath:",
+        //   allStates.filter((s) => s.geojsonPath).length
+        // );
+        // console.log(
+        //   "Historical areas without geojsonPath:",
+        //   allStates
+        //     .filter((s) => !s.geojsonPath)
+        //     .map((s) => ({
+        //       id: s.id,
+        //       name: s.name,
+        //       geojsonPath: s.geojsonPath,
+        //     }))
+        // );
         setAllHistoricalAreas(allStates as HistoricalServiceArea[]);
       } catch (error) {
         console.error("Failed to load all historical service states:", error);
@@ -150,11 +196,30 @@ const Index = () => {
     const loadHistoricalAreas = async () => {
       try {
         const services = await getAllServicesAtDate(currentTimelineDate);
-        console.log("Timeline date services:", services.length, services);
-        console.log(
-          "Timeline services with geojsonPath:",
-          services.filter((s) => s.geojsonPath).length
+
+        // Debug logging for Phoenix issue
+        console.log("📅 Timeline date:", currentTimelineDate.toISOString());
+        console.log("🔍 Total services loaded:", services.length);
+
+        const phoenixServices = services.filter(s =>
+          s.name?.toLowerCase().includes('phoenix') ||
+          s.city?.toLowerCase().includes('phoenix')
         );
+        console.log("🏜️ Phoenix services found:", phoenixServices.length, phoenixServices);
+
+        // Debug Phoenix geometry data specifically
+        phoenixServices.forEach(service => {
+          console.log("🏜️ Phoenix service details:", {
+            id: service.id,
+            name: service.name,
+            geojsonPath: service.geojsonPath,
+            geometry_name: service.geometry_name,
+            effectiveDate: service.effectiveDate,
+            endDate: service.endDate,
+            isActive: service.isActive
+          });
+        });
+
         setActiveHistoricalAreas(services as HistoricalServiceArea[]);
       } catch (error) {
         console.error("Failed to load historical service areas:", error);
@@ -198,36 +263,108 @@ const Index = () => {
     loadServiceTicks();
   }, [selectedArea]);
 
-  // Update URL when filters change
+  // Load selected area from URL once service areas are available
   useEffect(() => {
-    const newParams = new URLSearchParams();
-    if (filters.companies.length > 0) {
-      newParams.set("company", filters.companies.join(","));
+    if (selectedAreaIdFromUrl && serviceAreas.length > 0 && !selectedArea) {
+      const areaFromUrl = serviceAreas.find(area => area.id === selectedAreaIdFromUrl);
+      if (areaFromUrl) {
+        setSelectedArea(areaFromUrl);
+      }
     }
-    if (filters.platform.length > 0) {
-      newParams.set("platform", filters.platform.join(","));
-    }
-    if (filters.supervision.length > 0) {
-      newParams.set("supervision", filters.supervision.join(","));
-    }
-    if (filters.access.length > 0) {
-      newParams.set("access", filters.access.join(","));
-    }
-    if (filters.fares.length > 0) {
-      newParams.set("fares", filters.fares.join(","));
-    }
-    if (filters.directBooking.length > 0) {
-      newParams.set("directBooking", filters.directBooking.join(","));
-    }
-    setSearchParams(newParams);
-  }, [filters, setSearchParams]);
+  }, [selectedAreaIdFromUrl, serviceAreas, selectedArea]);
 
-  const handleServiceAreaClick = (area: ServiceArea | null) => {
+  // Track if this is the initial load to prevent immediate URL updates
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Update URL when state changes (but not on initial load)
+  useEffect(() => {
+    if (isInitialLoad) {
+      setIsInitialLoad(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      const currentParams = new URLSearchParams(searchParams.toString());
+      const newParams = new URLSearchParams();
+
+      // Update filters
+      if (filters.companies.length > 0) {
+        newParams.set("company", filters.companies.join(","));
+      } else {
+        newParams.delete("company");
+      }
+      if (filters.platform.length > 0) {
+        newParams.set("platform", filters.platform.join(","));
+      } else {
+        newParams.delete("platform");
+      }
+      if (filters.supervision.length > 0) {
+        newParams.set("supervision", filters.supervision.join(","));
+      } else {
+        newParams.delete("supervision");
+      }
+      if (filters.access.length > 0) {
+        newParams.set("access", filters.access.join(","));
+      } else {
+        newParams.delete("access");
+      }
+      if (filters.fares.length > 0) {
+        newParams.set("fares", filters.fares.join(","));
+      } else {
+        newParams.delete("fares");
+      }
+      if (filters.directBooking.length > 0) {
+        newParams.set("directBooking", filters.directBooking.join(","));
+      } else {
+        newParams.delete("directBooking");
+      }
+
+      // Update date
+      const today = new Date();
+      const isToday = currentTimelineDate.toDateString() === today.toDateString();
+      if (!isToday) {
+        newParams.set("date", currentTimelineDate.toISOString().split('T')[0]);
+      } else {
+        newParams.delete("date");
+      }
+
+      // Update selected area
+      if (selectedArea) {
+        newParams.set("selected", selectedArea.id);
+      } else {
+        newParams.delete("selected");
+      }
+
+      // Update map viewport
+      if (mapViewport) {
+        newParams.set("center", `${mapViewport.center[0]},${mapViewport.center[1]}`);
+        newParams.set("zoom", mapViewport.zoom.toString());
+      } else {
+        newParams.delete("center");
+        newParams.delete("zoom");
+      }
+
+      // Only update URL if it actually changed
+      if (currentParams.toString() !== newParams.toString()) {
+        setSearchParams(newParams, { replace: true });
+      }
+    }, 100); // 100ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [filters, currentTimelineDate, selectedArea, mapViewport]);
+
+  const handleServiceAreaClick = useCallback((area: ServiceArea | null) => {
     setSelectedArea(area);
-  };
+  }, []);
 
   const handleCloseBottomSheet = () => {
+    console.log("Closing bottom sheet");
     setSelectedArea(null);
+
+    // Remove the selected parameter from URL to prevent reopening
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    newSearchParams.delete("selected");
+    setSearchParams(newSearchParams, { replace: true });
   };
 
   const handleFiltersChange = (newFilters: FiltersState) => {
@@ -300,8 +437,12 @@ const Index = () => {
 
   const handleTimelineDateChange = (date: Date) => {
     setCurrentTimelineDate(date);
-    console.log("Timeline date changed to:", date);
+    // console.log("Timeline date changed to:", date);
   };
+
+  const handleMapViewportChange = useCallback((center: [number, number], zoom: number) => {
+    setMapViewport({ center, zoom });
+  }, []);
 
   // PART 1: AUDIT - Log layout measurements
   useLayoutEffect(() => {
@@ -360,11 +501,11 @@ const Index = () => {
             deploymentTransitions={deploymentTransitions}
             filters={filters}
             isTimelineMode={isTimelineMode}
-            showHistoricalData={
-              currentTimelineDate.toDateString() !== new Date().toDateString()
-            }
+            showHistoricalData={showHistoricalData}
             selectedArea={selectedArea}
             onServiceAreaClick={handleServiceAreaClick}
+            initialViewport={initialViewport}
+            onViewportChange={handleMapViewportChange}
             className="w-full h-full"
           />
         </div>

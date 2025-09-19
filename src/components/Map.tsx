@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, memo } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import {
@@ -52,6 +52,8 @@ interface MapProps {
   showHistoricalData?: boolean; // Whether to show historical data regardless of timeline UI state
   selectedArea?: ServiceArea | null; // Currently selected area for focus mode
   onServiceAreaClick: (serviceArea: ServiceArea | null) => void;
+  initialViewport?: { center: [number, number]; zoom: number } | null;
+  onViewportChange?: (center: [number, number], zoom: number) => void;
   className?: string;
 }
 
@@ -148,7 +150,7 @@ const fitBoundsWithResponsivePadding = (
   });
 };
 
-export function Map({
+export const Map = memo(function Map({
   serviceAreas,
   historicalServiceAreas = [],
   allHistoricalServiceAreas = [],
@@ -158,12 +160,17 @@ export function Map({
   showHistoricalData = false,
   selectedArea = null,
   onServiceAreaClick,
+  initialViewport = null,
+  onViewportChange,
   className,
 }: MapProps) {
+  console.log("Map component rendered");
+
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const loadedAreas = useRef<Set<string>>(new Set());
   const loadedHistoricalAreas = useRef<Set<string>>(new Set());
+  const hasAppliedInitialViewport = useRef(false);
   const [deploymentSources, setDeploymentSources] = useState<Set<string>>(
     new Set()
   );
@@ -178,13 +185,34 @@ export function Map({
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainer.current || map.current) return;
+    console.log("Map useEffect - attempting to initialize", {
+      hasContainer: !!mapContainer.current,
+      hasMap: !!map.current,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!mapContainer.current) {
+      console.log("No map container, skipping init");
+      return;
+    }
+
+    // Don't recreate if map already exists
+    if (map.current) {
+      console.log("Map already exists, skipping init");
+      return;
+    }
+
+    const initialCenter = initialViewport?.center || [-122.4, 37.8]; // San Francisco Bay Area
+    const initialZoom = initialViewport?.zoom || 8;
+    hasAppliedInitialViewport.current = true;
+
+    console.log("Creating new map instance", { initialCenter, initialZoom });
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/light-v11",
-      center: [-122.4, 37.8], // San Francisco Bay Area
-      zoom: 8,
+      center: initialCenter,
+      zoom: initialZoom,
       minZoom: 0,
       maxZoom: 18,
       projection: "mercator",
@@ -246,55 +274,58 @@ export function Map({
     window.addEventListener("avmap:container-resize", handleCustomResize);
 
     map.current.on("load", () => {
-      // --- initial extent: SF, LA, Vegas, Phoenix (and Austin on wide screens) ---
-      const showAustin = window.innerWidth >= 1600; // tweak threshold if you like
+      // Only apply default bounds if no initial viewport was provided from URL
+      if (!initialViewport) {
+        // --- initial extent: SF, LA, Vegas, Phoenix (and Austin on wide screens) ---
+        const showAustin = window.innerWidth >= 1600; // tweak threshold if you like
 
-      // helper to build bounds from points with a little padding
-      function boundsFrom(points: [number, number][]) {
-        const b = new mapboxgl.LngLatBounds(points[0], points[0]);
-        for (const p of points) b.extend(p);
-        return b;
+        // helper to build bounds from points with a little padding
+        function boundsFrom(points: [number, number][]) {
+          const b = new mapboxgl.LngLatBounds(points[0], points[0]);
+          for (const p of points) b.extend(p);
+          return b;
+        }
+
+        // key city coordinates [lng, lat]
+        const SF = [-122.4194, 37.7749] as [number, number];
+        const LA = [-118.2437, 34.0522] as [number, number];
+        const VEGAS = [-115.1398, 36.1699] as [number, number];
+        const PHOENIX = [-112.074, 33.4484] as [number, number];
+        const AUSTIN = [-97.7431, 30.2672] as [number, number];
+
+        const pts = showAustin
+          ? [SF, LA, VEGAS, PHOENIX, AUSTIN]
+          : [SF, LA, VEGAS, PHOENIX];
+
+        const INITIAL_BOUNDS = boundsFrom(pts);
+
+        // Widen to the west to give SF more breathing room
+        const WEST_BOOST_DEG = 8; // push farther west so SF stays visible with filters open
+        const sw0 = INITIAL_BOUNDS.getSouthWest();
+        const ne0 = INITIAL_BOUNDS.getNorthEast();
+
+        // Push the west edge farther left
+        const widened = new mapboxgl.LngLatBounds(
+          [sw0.lng - WEST_BOOST_DEG, sw0.lat],
+          [ne0.lng, ne0.lat]
+        );
+
+        // Compute dynamic left padding based on the floating overlay width
+        const overlay = document.getElementById("filters-overlay");
+        const overlayW = overlay ? overlay.getBoundingClientRect().width : 0;
+
+        // Clamp so we don't over-pad on tiny screens
+        const containerW =
+          (map.current?.getContainer() as HTMLDivElement).clientWidth ||
+          window.innerWidth;
+        const leftPad = Math.min(overlayW + 24, containerW * 0.4);
+
+        map.current?.fitBounds(widened, {
+          padding: { top: 72, right: 24, bottom: 24, left: leftPad },
+          linear: true,
+          duration: 0,
+        });
       }
-
-      // key city coordinates [lng, lat]
-      const SF = [-122.4194, 37.7749] as [number, number];
-      const LA = [-118.2437, 34.0522] as [number, number];
-      const VEGAS = [-115.1398, 36.1699] as [number, number];
-      const PHOENIX = [-112.074, 33.4484] as [number, number];
-      const AUSTIN = [-97.7431, 30.2672] as [number, number];
-
-      const pts = showAustin
-        ? [SF, LA, VEGAS, PHOENIX, AUSTIN]
-        : [SF, LA, VEGAS, PHOENIX];
-
-      const INITIAL_BOUNDS = boundsFrom(pts);
-
-      // Widen to the west to give SF more breathing room
-      const WEST_BOOST_DEG = 6; // ~100–110 km around SF; tweak as needed
-      const sw0 = INITIAL_BOUNDS.getSouthWest();
-      const ne0 = INITIAL_BOUNDS.getNorthEast();
-
-      // Push the west edge farther left
-      const widened = new mapboxgl.LngLatBounds(
-        [sw0.lng - WEST_BOOST_DEG, sw0.lat],
-        [ne0.lng, ne0.lat]
-      );
-
-      // Compute dynamic left padding based on the floating overlay width
-      const overlay = document.getElementById("filters-overlay");
-      const overlayW = overlay ? overlay.getBoundingClientRect().width : 0;
-
-      // Clamp so we don't over-pad on tiny screens
-      const containerW =
-        (map.current?.getContainer() as HTMLDivElement).clientWidth ||
-        window.innerWidth;
-      const leftPad = Math.min(overlayW + 24, containerW * 0.4);
-
-      map.current?.fitBounds(widened, {
-        padding: { top: 72, right: 24, bottom: 24, left: leftPad },
-        linear: true,
-        duration: 0,
-      });
 
       // Function to adjust padding when overlay state changes
       function padForOverlay() {
@@ -314,8 +345,31 @@ export function Map({
       if (map.current) map.current.resize();
     });
 
+    // Track viewport changes for URL synchronization
+    let viewportTimeoutId: NodeJS.Timeout;
+    if (onViewportChange && map.current) {
+      const handleViewportChange = () => {
+        if (!map.current) return;
+
+        // Debounce viewport updates to avoid excessive URL updates
+        clearTimeout(viewportTimeoutId);
+        viewportTimeoutId = setTimeout(() => {
+          if (map.current && onViewportChange) {
+            const center = map.current.getCenter();
+            const zoom = map.current.getZoom();
+            onViewportChange([center.lng, center.lat], zoom);
+          }
+        }, 500); // 500ms debounce
+      };
+
+      map.current.on("moveend", handleViewportChange);
+      map.current.on("zoomend", handleViewportChange);
+    }
+
     // Cleanup
     return () => {
+      console.log("Map cleanup - destroying map instance");
+      clearTimeout(viewportTimeoutId);
       resizeObserver.disconnect();
       window.removeEventListener("resize", handleWindowResize);
       window.removeEventListener("avmap:container-resize", handleCustomResize);
@@ -324,7 +378,27 @@ export function Map({
         map.current = null;
       }
     };
-  }, []);
+  }, []); // Remove all dependencies to prevent re-mounting
+
+  // Handle initial viewport changes after map is created (without re-mounting)
+  useEffect(() => {
+    if (!map.current || !initialViewport || hasAppliedInitialViewport.current) return;
+
+    const currentCenter = map.current.getCenter();
+    const currentZoom = map.current.getZoom();
+
+    // Only update if the viewport has changed significantly
+    const centerChanged = Math.abs(currentCenter.lng - initialViewport.center[0]) > 0.01 ||
+                         Math.abs(currentCenter.lat - initialViewport.center[1]) > 0.01;
+    const zoomChanged = Math.abs(currentZoom - initialViewport.zoom) > 0.1;
+
+    if (centerChanged || zoomChanged) {
+      map.current.setCenter(initialViewport.center);
+      map.current.setZoom(initialViewport.zoom);
+    }
+
+    hasAppliedInitialViewport.current = true;
+  }, [initialViewport]);
 
   // Load all service areas once when map is ready
   useEffect(() => {
@@ -424,6 +498,15 @@ export function Map({
 
     // Add global click handler for overlap detection
     currentMap.on("click", (e) => {
+      // Check if the click originated from the bottom sheet - if so, ignore it
+      const clickTarget = e.originalEvent?.target as HTMLElement;
+      if (clickTarget) {
+        const bottomSheet = document.querySelector('[data-bottom-sheet]');
+        if (bottomSheet && bottomSheet.contains(clickTarget)) {
+          return;
+        }
+      }
+
       // Close any existing popup
       if (activePopup.current) {
         activePopup.current.remove();
@@ -753,6 +836,7 @@ export function Map({
     loadedAreas,
     onServiceAreaClick,
     showHistoricalData,
+    isTimelineMode,
   ]);
 
   // Preload ALL historical service areas at initialization for instant timeline scrubbing
@@ -871,14 +955,14 @@ export function Map({
   useEffect(() => {
     if (!map.current) return;
 
-    console.log("🔍 CURRENT AREAS VISIBILITY EFFECT TRIGGERED");
-    console.log("   showHistoricalData:", showHistoricalData);
-    console.log("   serviceAreas:", serviceAreas.length);
-    console.log("   selectedArea:", selectedArea?.id || "null");
-    console.log(
-      "   serviceAreas data:",
-      serviceAreas.map((a) => `${a.id} (${a.company})`)
-    );
+    // console.log("🔍 CURRENT AREAS VISIBILITY EFFECT TRIGGERED");
+    // console.log("   showHistoricalData:", showHistoricalData);
+    // console.log("   serviceAreas:", serviceAreas.length);
+    // console.log("   selectedArea:", selectedArea?.id || "null");
+    // console.log(
+    //   "   serviceAreas data:",
+    //   serviceAreas.map((a) => `${a.id} (${a.company})`)
+    // );
 
     const currentMap = map.current;
     const visibilityUpdates: Array<{
@@ -918,8 +1002,37 @@ export function Map({
           let visibility: "visible" | "none" = "none";
 
           if (isFocusMode) {
-            // In focus mode, only show the selected area
-            visibility = area.id === selectedArea.id ? "visible" : "none";
+            // In focus mode, show all areas but we'll handle highlighting differently
+            const companyMatch =
+              filters.companies.length === 0 ||
+              filters.companies.includes(area.company);
+            const platformMatch = checkPlatformMatch(
+              filters.platform,
+              area.platform
+            );
+            const supervisionMatch =
+              filters.supervision.length === 0 ||
+              filters.supervision.includes(area.supervision || "Autonomous");
+            const accessMatch = convertAccessFilter(
+              filters.access,
+              area.access || "Public"
+            );
+            const faresMatch =
+              filters.fares.length === 0 ||
+              filters.fares.includes(area.fares || "Yes");
+            const directBookingMatch =
+              filters.directBooking.length === 0 ||
+              filters.directBooking.includes(area.directBooking || "Yes");
+
+            visibility =
+              companyMatch &&
+              platformMatch &&
+              supervisionMatch &&
+              accessMatch &&
+              faresMatch &&
+              directBookingMatch
+                ? "visible"
+                : "none";
           } else {
             // Normal mode - apply current filters
             const companyMatch =
@@ -992,24 +1105,55 @@ export function Map({
         console.warn(`Failed to update visibility for ${layerId}:`, error);
       }
     });
+
+    // Apply highlighting for selected area in focus mode
+    if (!showHistoricalData) {
+      serviceAreas.forEach((area) => {
+        const fillLayerId = `${area.id}-fill`;
+        const lineLayerId = `${area.id}-line`;
+
+        if (currentMap.getLayer(fillLayerId) && currentMap.getLayer(lineLayerId)) {
+          try {
+            if (isFocusMode && selectedArea && area.id === selectedArea.id) {
+              // Highlight selected area
+              currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.6);
+              currentMap.setPaintProperty(lineLayerId, "line-opacity", 1.0);
+              currentMap.setPaintProperty(lineLayerId, "line-width", 3);
+            } else if (isFocusMode) {
+              // Dim other areas when in focus mode
+              currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.2);
+              currentMap.setPaintProperty(lineLayerId, "line-opacity", 0.4);
+              currentMap.setPaintProperty(lineLayerId, "line-width", 1.5);
+            } else {
+              // Normal mode - reset highlighting
+              currentMap.setPaintProperty(fillLayerId, "fill-opacity", 0.4);
+              currentMap.setPaintProperty(lineLayerId, "line-opacity", 0.8);
+              currentMap.setPaintProperty(lineLayerId, "line-width", 2);
+            }
+          } catch (error) {
+            console.warn(`Failed to update highlighting for ${area.id}:`, error);
+          }
+        }
+      });
+    }
   }, [showHistoricalData, serviceAreas, filters, selectedArea]);
 
   // Update historical areas visibility when timeline data changes (not mode toggle)
   useEffect(() => {
     if (!map.current || !showHistoricalData) return;
 
-    console.log("🔍 HISTORICAL VISIBILITY EFFECT TRIGGERED");
-    console.log("   showHistoricalData:", showHistoricalData);
-    console.log("   historicalServiceAreas:", historicalServiceAreas.length);
-    console.log("   selectedArea:", selectedArea?.id || "null");
-    console.log(
-      "   historicalServiceAreas data:",
-      historicalServiceAreas.map((a) => `${a.id} (${a.company})`)
-    );
-    console.log(
-      "   Loaded historical areas:",
-      loadedHistoricalAreas.current.size
-    );
+    // console.log("🔍 HISTORICAL VISIBILITY EFFECT TRIGGERED");
+    // console.log("   showHistoricalData:", showHistoricalData);
+    // console.log("   historicalServiceAreas:", historicalServiceAreas.length);
+    // console.log("   selectedArea:", selectedArea?.id || "null");
+    // console.log(
+    //   "   historicalServiceAreas data:",
+    //   historicalServiceAreas.map((a) => `${a.id} (${a.company})`)
+    // );
+    // console.log(
+    //   "   Loaded historical areas:",
+    //   loadedHistoricalAreas.current.size
+    // );
 
     const currentMap = map.current;
     const visibilityUpdates: Array<{
@@ -1025,6 +1169,19 @@ export function Map({
     historicalServiceAreas.forEach((area) => {
       let shouldShow = false;
 
+      // Debug Phoenix specifically
+      const isPhoenix = area.name?.toLowerCase().includes('phoenix');
+      if (isPhoenix) {
+        console.log("🏜️ Processing Phoenix area in Map:", {
+          id: area.id,
+          name: area.name,
+          company: area.company,
+          geojsonPath: area.geojsonPath,
+          isFocusMode,
+          selectedAreaId: selectedArea?.id
+        });
+      }
+
       if (isFocusMode) {
         // In focus mode, only show the selected area
         shouldShow = area.id === selectedArea.id;
@@ -1035,7 +1192,10 @@ export function Map({
           filters.companies.includes(area.company);
         const platformMatch =
           filters.platform.length === 0 ||
-          filters.platform.includes(area.platform || "Unknown");
+          filters.platform.includes(area.platform || "Unknown") ||
+          // Handle comma-separated platforms like "Uber, Waymo"
+          (area.platform &&
+           area.platform.split(', ').some(p => filters.platform.includes(p.trim())));
         const supervisionMatch =
           filters.supervision.length === 0 ||
           filters.supervision.includes(area.supervision || "Fully Autonomous");
@@ -1043,6 +1203,19 @@ export function Map({
           filters.access,
           area.access || "Public"
         );
+
+        if (isPhoenix) {
+          console.log("🏜️ Phoenix filter results:", {
+            companyMatch,
+            platformMatch,
+            supervisionMatch,
+            accessMatch,
+            company: area.company,
+            platform: area.platform,
+            supervision: area.supervision,
+            access: area.access
+          });
+        }
         const faresMatch =
           filters.fares.length === 0 ||
           filters.fares.includes(area.fares || "Yes");
@@ -1057,13 +1230,22 @@ export function Map({
           accessMatch &&
           faresMatch &&
           directBookingMatch;
+
+        if (isPhoenix) {
+          console.log("🏜️ Phoenix final shouldShow decision:", shouldShow);
+        }
       }
 
       if (shouldShow) {
         // Create the historical ID that was used when loading the area (includes geometry name)
-        visibleHistoricalAreaIds.add(
-          `historical-${area.id}-${area.geojsonPath}`
-        );
+        const historicalId = `historical-${area.id}-${area.geojsonPath}`;
+        visibleHistoricalAreaIds.add(historicalId);
+
+        if (isPhoenix) {
+          console.log("🏜️ Phoenix added to visible areas with ID:", historicalId);
+        }
+      } else if (isPhoenix) {
+        console.log("🏜️ Phoenix NOT added to visible areas - shouldShow:", shouldShow);
       }
     });
 
@@ -1511,4 +1693,4 @@ export function Map({
       <div ref={mapContainer} className="w-full h-full relative" />
     </div>
   );
-}
+});

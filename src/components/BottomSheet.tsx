@@ -305,6 +305,10 @@ export function BottomSheet({
         <Card
           ref={cardRef}
           className="shadow-xl border border-white/10 bg-black/50 text-white backdrop-blur-md"
+          onClick={(e) => {
+            console.log("Card clicked!", e.target);
+            e.stopPropagation();
+          }}
         >
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
             <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -322,7 +326,12 @@ export function BottomSheet({
             <Button
               variant="ghost"
               size="sm"
-              onClick={onClose}
+              onClick={(e) => {
+                console.log("Close button clicked!", e);
+                e.stopPropagation();
+                e.preventDefault();
+                onClose();
+              }}
               className="text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
             >
               <XIcon className="h-4 w-4" />

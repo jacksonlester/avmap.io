@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Slider } from "@/components/ui/slider";
 import {
   Tooltip,
@@ -67,6 +67,8 @@ export function ServiceTimeline({
   const DEBUG = false; // Debug mode toggle
   const isMobile = useIsMobile();
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const timelineRef = useRef<HTMLDivElement>(null);
   // Convert dates to slider values (0-100)
   const totalDuration = endDate.getTime() - startDate.getTime();
   const currentProgress =
@@ -76,6 +78,62 @@ export function ServiceTimeline({
     const newTimestamp = startDate.getTime() + (value[0] / 100) * totalDuration;
     onDateChange(new Date(newTimestamp));
   };
+
+  // Handle mouse events for dragging
+  const handleTimelineClick = (e: React.MouseEvent | MouseEvent) => {
+    if (!timelineRef.current) return;
+
+    // Always get fresh rect for accurate positioning
+    const rect = timelineRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+    const newTimestamp = startDate.getTime() + (percentage / 100) * totalDuration;
+    const newDate = new Date(newTimestamp);
+
+    // Clamp date to not exceed today
+    const today = new Date();
+    const clampedDate = newDate > today ? today : newDate;
+
+    onDateChange(clampedDate);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    handleTimelineClick(e);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    // Mouse move is now handled globally for better responsiveness
+    return;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Global mouse listeners for smooth timeline dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Throttle mouse move events for better performance
+      requestAnimationFrame(() => {
+        handleTimelineClick(e);
+      });
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isDragging]);
 
   // Group events by date and handle overlapping icons
   const groupedEvents = events.reduce((acc, event) => {
@@ -102,98 +160,116 @@ export function ServiceTimeline({
   // Sort by progress to handle overlaps
   positionedEventGroups.sort((a, b) => a.progress - b.progress);
 
-  // Handle icon positioning to prevent overlaps
-  const finalPositionedGroups = positionedEventGroups.map((group, index) => {
-    let iconOffset = 0;
+  // Enhanced spacing algorithm to prevent overlaps
+  const finalPositionedGroups = (() => {
+    // Calculate minimum distance based on timeline width (responsive)
+    const minDistancePercent = 2.5; // 2.5% minimum distance between markers
 
-    // Calculate minimum distance needed between icons (assuming ~16px icon width + 4px margin)
-    const minDistance = 3; // 3% of timeline width should be minimum distance
+    // Sort by progress to handle overlaps sequentially
+    const sorted = [...positionedEventGroups].sort((a, b) => a.progress - b.progress);
 
-    // Check for overlaps with previous groups
-    for (let i = index - 1; i >= 0; i--) {
-      const prevGroup = positionedEventGroups[i];
-      const distance = Math.abs(group.progress - prevGroup.progress);
+    // Adjust positions to prevent overlaps
+    const adjusted: Array<any> = [];
 
-      if (distance < minDistance) {
-        // Calculate how many icons we need to offset
-        const totalPrevIcons = positionedEventGroups.slice(0, index)
-          .filter(pg => Math.abs(pg.progress - group.progress) < minDistance)
-          .reduce((acc, pg) => acc + pg.events.length, 0);
+    for (let index = 0; index < sorted.length; index++) {
+      const group = sorted[index];
+      let adjustedProgress = group.progress;
 
-        iconOffset = totalPrevIcons * 12; // 12px per previous icon for tighter clustering
-        break;
+      // Check against all previous groups
+      for (let i = 0; i < adjusted.length; i++) {
+        const prevGroup = adjusted[i];
+        const distance = Math.abs(adjustedProgress - prevGroup.progress);
+
+        if (distance < minDistancePercent) {
+          // Push this marker to the right of the previous one
+          adjustedProgress = prevGroup.progress + minDistancePercent;
+        }
       }
+
+      // Don't let markers go beyond 95% to keep them visible
+      adjustedProgress = Math.min(adjustedProgress, 95);
+
+      adjusted.push({
+        ...group,
+        progress: adjustedProgress,
+        originalProgress: group.progress, // Keep original for tooltip reference
+      });
     }
 
-    return {
-      ...group,
-      iconOffset,
-    };
-  });
+    return adjusted;
+  })();
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <div className={`space-y-3 ${className}`}>
-        {/* Timeline with events */}
-        <div className="relative flex items-center gap-3 pt-6">
-          {/* Start date - two lines */}
-          <div className="text-xs text-white/60 whitespace-nowrap flex-shrink-0 text-center">
+    <div className={`space-y-3 ${className}`}>
+        {/* YouTube-style Timeline */}
+        <div className="relative flex items-center gap-3 pt-2">
+          {/* Start date */}
+          <div className="text-xs text-white/60 whitespace-nowrap flex-shrink-0 text-center min-w-[3rem]">
             <div>{startDate.toLocaleDateString("en-US", { month: "short" })}</div>
             <div>{startDate.getFullYear()}</div>
           </div>
 
-          {/* Timeline container */}
-          <div className="flex-1 relative">
-            {DEBUG && (
-              <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-red-500/60 pointer-events-none z-[999]" />
-            )}
+          {/* Timeline container - YouTube style */}
+          <div
+            ref={timelineRef}
+            className="flex-1 relative group/timeline"
+          >
+            {/* Clickable track area */}
+            <div
+              className={`relative h-6 flex items-center select-none ${isDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onClick={!isDragging ? handleTimelineClick : undefined}
+            >
+              {/* Track background */}
+              <div className="w-full h-1 bg-white/20 rounded-full group-hover/timeline:h-1.5 transition-all">
+                {/* Progress bar */}
+                <div
+                  className="h-full bg-primary rounded-full relative transition-all"
+                  style={{ width: `${currentProgress}%` }}
+                />
+              </div>
 
-            {/* Layer 1: TRACK (z-10) */}
-            <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[2px] rounded-full bg-white/20 z-10">
-              {/* Progress range */}
-              <div
-                className="absolute h-full bg-primary rounded-full"
-                style={{ width: `${currentProgress}%` }}
-              />
-            </div>
-
-            {/* Layer 2: TICKS overlay (z-20) */}
-            <div className="absolute inset-0 z-20 pointer-events-none">
+              {/* Event markers */}
               {finalPositionedGroups.map((group, groupIndex) => {
                 const isActive = group.date <= currentDate;
 
                 return (
-                  <Tooltip
-                    key={group.dateKey}
-                    {...(isMobile && {
-                      open: openTooltip === group.dateKey,
-                      onOpenChange: (open) => {
-                        setOpenTooltip(open ? group.dateKey : null);
-                      }
-                    })}
-                  >
-                    <TooltipTrigger asChild>
+                  <TooltipProvider key={`provider-${group.dateKey}`} delayDuration={50} skipDelayDuration={0}>
+                    <Tooltip
+                      {...(isMobile && {
+                        open: openTooltip === group.dateKey,
+                        onOpenChange: (open) => {
+                          setOpenTooltip(open ? group.dateKey : null);
+                        }
+                      })}
+                    >
+                      <TooltipTrigger asChild>
                       <div
-                        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-auto cursor-pointer${DEBUG ? ' outline outline-1 outline-amber-500/60' : ''}`}
+                        className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-20"
                         style={{ left: `${group.progress}%` }}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Use original progress for accurate date navigation
+                          const targetProgress = (group as any).originalProgress || group.progress;
+                          const newTimestamp = startDate.getTime() + (targetProgress / 100) * totalDuration;
+                          onDateChange(new Date(newTimestamp));
                           if (isMobile) {
                             setOpenTooltip(openTooltip === group.dateKey ? null : group.dateKey);
                           }
                         }}
-                        aria-hidden="true"
                       >
-                        {/* Vertical tick mark */}
                         <div
-                          className={`w-[2px] h-4 transition-all ${
+                          className={`w-2 h-2 rounded-full border border-white/60 transition-all hover:scale-150 hover:border-white ${
                             isActive
-                              ? "bg-blue-400 shadow-lg shadow-blue-400/50"
-                              : "bg-white/50"
+                              ? "bg-primary shadow-lg shadow-primary/50"
+                              : "bg-white/40 hover:bg-white/80"
                           }`}
                         />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs" sideOffset={8}>
+                    <TooltipContent side="top" className="max-w-xs" sideOffset={12}>
                       <div className="text-xs space-y-2">
                         {group.events.map((event, eventIndex) => (
                           <div key={eventIndex} className={eventIndex > 0 ? "border-t border-white/20 pt-2" : ""}>
@@ -216,47 +292,27 @@ export function ServiceTimeline({
                         ))}
                       </div>
                     </TooltipContent>
-                  </Tooltip>
+                    </Tooltip>
+                  </TooltipProvider>
                 );
               })}
+
+              {/* Scrubber handle - YouTube style */}
+              <div
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 transition-all ${isDragging ? 'scale-110' : ''}`}
+                style={{ left: `${currentProgress}%` }}
+              >
+                <div className={`w-3 h-3 bg-primary rounded-full shadow-lg transition-all group-hover/timeline:w-4 group-hover/timeline:h-4 ${isDragging ? 'scale-110' : ''}`} />
+              </div>
             </div>
-
-            {/* Layer 3: HANDLE (z-30) */}
-            <div
-              className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer z-30${DEBUG ? ' outline outline-1 outline-amber-500/60' : ''}`}
-              style={{ left: `${currentProgress}%` }}
-              tabIndex={0}
-              role="slider"
-              aria-label="Timeline scrubber"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={currentProgress}
-            />
-
-            {/* Layer 4: INPUT (z-40) */}
-            <input
-              type="range"
-              min={0}
-              max={100}
-              step={0.1}
-              value={currentProgress}
-              onChange={(e) => {
-                const value = parseFloat(e.target.value);
-                const newTimestamp = startDate.getTime() + (value / 100) * totalDuration;
-                onDateChange(new Date(newTimestamp));
-              }}
-              className="absolute inset-0 z-40 opacity-0 cursor-pointer appearance-none bg-transparent"
-              aria-label="Timeline scrubber input"
-            />
           </div>
 
-          {/* End date - two lines */}
-          <div className="text-xs text-white/60 whitespace-nowrap flex-shrink-0 text-center">
+          {/* End date */}
+          <div className="text-xs text-white/60 whitespace-nowrap flex-shrink-0 text-center min-w-[3rem]">
             <div>{endDate.toLocaleDateString("en-US", { month: "short" })}</div>
             <div>{endDate.getFullYear()}</div>
           </div>
         </div>
       </div>
-    </TooltipProvider>
   );
 }

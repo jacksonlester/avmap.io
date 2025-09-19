@@ -39,6 +39,14 @@ export async function getAllServicesAtDate(date: Date) {
     date.toISOString()
   );
 
+  // Debug Phoenix events specifically
+  const phoenixEvents = events?.filter(e =>
+    e.aggregate_id?.toLowerCase().includes('phoenix') ||
+    e.event_data?.city?.toLowerCase().includes('phoenix') ||
+    e.event_data?.name?.toLowerCase().includes('phoenix')
+  ) || [];
+  console.log("🏜️ Phoenix events found:", phoenixEvents.length, phoenixEvents);
+
   // Group by service and rebuild each state
   const serviceStates = new Map();
 
@@ -193,15 +201,13 @@ export async function getAllServicesAtDate(date: Date) {
     "active services for",
     date.toISOString()
   );
-  activeServices.forEach((service) => {
-    console.log(
-      "🔍 -",
-      service.name,
-      service.company,
-      "effectiveDate:",
-      service.effectiveDate
-    );
-  });
+
+  // Debug Phoenix services specifically
+  const phoenixActiveServices = activeServices.filter(s =>
+    s.name?.toLowerCase().includes('phoenix') ||
+    s.city?.toLowerCase().includes('phoenix')
+  );
+  console.log("🏜️ Active Phoenix services:", phoenixActiveServices.length, phoenixActiveServices);
 
   return activeServices;
 }

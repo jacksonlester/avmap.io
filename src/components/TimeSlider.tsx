@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { X, GripVertical, History } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,11 +36,14 @@ export function TimeSlider({
   onTimelineModeChange,
   className,
 }: TimeSliderProps) {
-  const [isMinimized, setIsMinimized] = useState(true);
-  const [position, setPosition] = useState({ x: 76, y: 73 }); // Position to the right of button at same vertical level
-  const [isDragging, setIsDragging] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  // Position 73px from bottom
+  const [position, setPosition] = useState({ x: 16, y: 73 });
+  const [isPanelDragging, setIsPanelDragging] = useState(false);
+  const [isTimelineDragging, setIsTimelineDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
   // Sync internal minimized state with external timeline mode
@@ -59,8 +61,65 @@ export function TimeSlider({
     onDateChange(new Date(newTimestamp));
   };
 
-  // Dragging functionality for desktop - only when clicking the handle
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Handle mouse events for YouTube-style dragging
+  const handleTimelineClick = (e: React.MouseEvent | MouseEvent) => {
+    if (!timelineRef.current) return;
+
+    // Always get fresh rect for accurate positioning
+    const rect = timelineRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+    const newTimestamp = startDate.getTime() + (percentage / 100) * totalDuration;
+    const newDate = new Date(newTimestamp);
+
+    // Clamp date to not exceed today
+    const today = new Date();
+    const clampedDate = newDate > today ? today : newDate;
+
+    onDateChange(clampedDate);
+  };
+
+  const handleTimelineMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent panel dragging
+    setIsTimelineDragging(true);
+    handleTimelineClick(e);
+  };
+
+  const handleTimelineMouseMove = (e: React.MouseEvent) => {
+    // Mouse move is now handled globally for better responsiveness
+    return;
+  };
+
+  const handleTimelineMouseUp = () => {
+    setIsTimelineDragging(false);
+  };
+
+  // Global mouse listeners for smooth timeline dragging
+  useEffect(() => {
+    if (!isTimelineDragging) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Throttle mouse move events for better performance
+      requestAnimationFrame(() => {
+        handleTimelineClick(e);
+      });
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsTimelineDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isTimelineDragging]);
+
+  // Card dragging functionality for desktop positioning
+  const handleCardMouseDown = (e: React.MouseEvent) => {
     if (isMobile || isMinimized) return;
 
     // Only start dragging if clicking the grip handle specifically
@@ -72,7 +131,7 @@ export function TimeSlider({
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    setIsDragging(true);
+    setIsPanelDragging(true);
     setDragOffset({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
@@ -80,17 +139,17 @@ export function TimeSlider({
   };
 
   useEffect(() => {
-    if (!isDragging) return;
+    if (!isPanelDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const newX = Math.max(
         0,
-        Math.min(window.innerWidth - 600, e.clientX - dragOffset.x)
+        Math.min(window.innerWidth - 320, e.clientX - dragOffset.x)
       );
       const newY = Math.max(
-        24,
+        73, // Keep 73px from bottom
         Math.min(
-          window.innerHeight - 100,
+          window.innerHeight - 150, // Leave space at top
           window.innerHeight - (e.clientY - dragOffset.y)
         )
       );
@@ -99,7 +158,7 @@ export function TimeSlider({
     };
 
     const handleMouseUp = () => {
-      setIsDragging(false);
+      setIsPanelDragging(false);
     };
 
     document.addEventListener("mousemove", handleMouseMove);
@@ -109,7 +168,7 @@ export function TimeSlider({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragOffset]);
+  }, [isPanelDragging, dragOffset]);
 
   // Mobile version with Sheet - controlled externally via isTimelineMode
   if (isMobile) {
@@ -122,11 +181,58 @@ export function TimeSlider({
           }
         }}
       >
-        <SheetContent side="bottom" className="h-32 p-0">
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              {/* Start date */}
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
+        <SheetContent side="bottom" className="h-40 p-0">
+          <div className="p-4 space-y-3">
+            {/* Top row: Timeline title */}
+            <div className="text-center">
+              <span className="text-sm font-medium">Timeline</span>
+            </div>
+
+            {/* Middle row: Current date display */}
+            <div className="text-center">
+              <div className="inline-block text-xs bg-muted px-2 py-1 rounded whitespace-nowrap shadow border">
+                {(() => {
+                  const today = new Date();
+                  const isToday = currentDate.toDateString() === today.toDateString();
+                  return isToday ? "today" : currentDate.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                })()}
+              </div>
+            </div>
+
+            {/* YouTube-style timeline slider for mobile */}
+            <div className="relative">
+              <div className="relative group/timeline">
+                <div
+                  className="relative h-6 flex items-center cursor-pointer"
+                  onClick={handleTimelineClick}
+                >
+                  {/* Track background */}
+                  <div className="w-full h-1 bg-muted rounded-full group-hover/timeline:h-1.5 transition-all">
+                    {/* Progress bar */}
+                    <div
+                      className="h-full bg-primary rounded-full relative transition-all"
+                      style={{ width: `${currentProgress}%` }}
+                    />
+                  </div>
+
+                  {/* Scrubber handle */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 transition-all"
+                    style={{ left: `${currentProgress}%` }}
+                  >
+                    <div className="w-3 h-3 bg-primary rounded-full shadow-lg transition-all group-hover/timeline:w-4 group-hover/timeline:h-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom row: Start date and Today button */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="whitespace-nowrap">
                 {startDate.toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -134,31 +240,6 @@ export function TimeSlider({
                 })}
               </span>
 
-              {/* Timeline slider with traveling date */}
-              <div className="flex-1 relative py-2">
-                <Slider
-                  value={[currentProgress]}
-                  onValueChange={handleSliderChange}
-                  max={100}
-                  step={0.1}
-                  className="w-full [&>*[role=slider]]:bg-primary [&>*[role=slider]]:border-primary [&>*[role=slider]]:shadow-md [&>*[role=slider]]:h-4 [&>*[role=slider]]:w-4"
-                />
-                {/* Traveling date indicator */}
-                <div
-                  className="absolute -top-8 transform -translate-x-1/2 pointer-events-none z-10"
-                  style={{ left: `${currentProgress}%` }}
-                >
-                  <span className="text-xs text-foreground bg-background/90 px-2 py-1 rounded whitespace-nowrap shadow-lg border">
-                    {currentDate.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </span>
-                </div>
-              </div>
-
-              {/* Clickable Today button */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -185,70 +266,28 @@ export function TimeSlider({
       ref={cardRef}
       data-timeline-container
       className={cn(
-        "fixed z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg pointer-events-auto",
-        isDragging && "cursor-grabbing",
+        "fixed z-[59] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg pointer-events-auto",
+        isPanelDragging && "cursor-grabbing",
         className
       )}
       style={{
         left: `${position.x}px`,
-        bottom: `${position.y}px`, // Position at same level as the button
-        width: "min(600px, 90vw)",
+        bottom: `${position.y}px`, // Position 73px from bottom
+        width: "min(320px, 90vw)",
         height: "auto",
       }}
     >
-      <CardContent className="px-4 py-3">
-        <div className="flex items-center gap-4">
-          {/* Drag handle */}
-          <GripVertical
-            data-grip-handle
-            className="h-4 w-4 text-white/50 hover:text-white cursor-grab active:cursor-grabbing"
-            onMouseDown={handleMouseDown}
-          />
-
-          {/* Start date */}
-          <span className="text-xs text-white/70 whitespace-nowrap">
-            {startDate.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </span>
-
-          {/* Timeline slider with traveling date */}
-          <div className="flex-1 relative py-2">
-            <Slider
-              value={[currentProgress]}
-              onValueChange={handleSliderChange}
-              max={100}
-              step={0.1}
-              className="w-full [&>*[role=slider]]:bg-white [&>*[role=slider]]:border-white [&>*[role=slider]]:shadow-md [&>*[role=slider]]:h-4 [&>*[role=slider]]:w-4"
+      <CardContent className="px-4 py-3 space-y-3">
+        {/* Top row: Drag handle, title, and close button */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GripVertical
+              data-grip-handle
+              className="h-4 w-4 text-white/50 hover:text-white cursor-grab active:cursor-grabbing"
+              onMouseDown={handleCardMouseDown}
             />
-            {/* Traveling date indicator - positioned based on slider progress */}
-            <div
-              className="absolute -top-8 transform -translate-x-1/2 pointer-events-none z-10"
-              style={{ left: `${currentProgress}%` }}
-            >
-              <span className="text-xs text-white bg-black/90 px-2 py-1 rounded whitespace-nowrap shadow-lg">
-                {currentDate.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-            </div>
+            <span className="text-sm font-medium text-white">Timeline</span>
           </div>
-
-          {/* Clickable Today button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDateChange(endDate)}
-            className="text-xs text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 h-auto"
-          >
-            Today
-          </Button>
-
-          {/* Close button */}
           <Button
             variant="ghost"
             size="sm"
@@ -261,6 +300,76 @@ export function TimeSlider({
             className="h-6 w-6 p-0 text-white/70 hover:text-white hover:bg-white/10"
           >
             <X className="h-3 w-3" />
+          </Button>
+        </div>
+
+        {/* Middle row: Current date display */}
+        <div className="text-center">
+          <div
+            className="inline-block text-xs text-white bg-black/90 px-2 py-1 rounded whitespace-nowrap shadow-lg"
+          >
+            {(() => {
+              const today = new Date();
+              const isToday = currentDate.toDateString() === today.toDateString();
+              return isToday ? "today" : currentDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
+            })()}
+          </div>
+        </div>
+
+        {/* YouTube-style timeline slider */}
+        <div className="relative">
+          <div
+            ref={timelineRef}
+            className="relative group/timeline"
+          >
+            <div
+              className={`relative h-4 flex items-center select-none ${isTimelineDragging ? 'cursor-grabbing' : 'cursor-pointer'}`}
+              onMouseDown={handleTimelineMouseDown}
+              onMouseMove={handleTimelineMouseMove}
+              onMouseUp={handleTimelineMouseUp}
+              onClick={!isTimelineDragging ? handleTimelineClick : undefined}
+            >
+              {/* Track background - thinner for main timeline */}
+              <div className="w-full h-0.5 bg-white/20 rounded-full group-hover/timeline:h-1 transition-all">
+                {/* Progress bar */}
+                <div
+                  className="h-full bg-white rounded-full relative transition-all"
+                  style={{ width: `${currentProgress}%` }}
+                />
+              </div>
+
+              {/* Scrubber handle - smaller and on top for main timeline */}
+              <div
+                className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 transition-all ${isTimelineDragging ? 'scale-110' : ''}`}
+                style={{ left: `${currentProgress}%` }}
+              >
+                <div className={`w-2.5 h-2.5 bg-white rounded-full shadow-lg transition-all group-hover/timeline:w-3 group-hover/timeline:h-3 ${isTimelineDragging ? 'scale-110' : ''}`} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom row: Start date and Today button */}
+        <div className="flex items-center justify-between text-xs text-white/70">
+          <span className="whitespace-nowrap">
+            {startDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </span>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDateChange(endDate)}
+            className="text-xs text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 h-auto"
+          >
+            Today
           </Button>
         </div>
       </CardContent>

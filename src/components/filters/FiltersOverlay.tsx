@@ -56,8 +56,8 @@ export function FiltersOverlay({
   onChange,
   className,
 }: FiltersOverlayProps) {
-  const [isMinimized, setIsMinimized] = useState(true);
-  const [position, setPosition] = useState({ x: 16, y: 16 });
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [position, setPosition] = useState({ x: 16, y: 73 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -140,18 +140,12 @@ export function FiltersOverlay({
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const headerHeight = parseInt(
-        getComputedStyle(document.documentElement).getPropertyValue(
-          "--header-h"
-        ) || "56"
-      );
-
       const newX = Math.max(
         0,
         Math.min(window.innerWidth - 340, e.clientX - dragOffset.x)
       );
       const newY = Math.max(
-        headerHeight + 8,
+        73, // Keep 73px from top
         Math.min(window.innerHeight - 400, e.clientY - dragOffset.y)
       );
 
@@ -183,7 +177,7 @@ export function FiltersOverlay({
                   variant="secondary"
                   size="sm"
                   className="fixed left-4 z-[60] rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60"
-                  style={{ top: "calc(var(--header-h) + 12px)" }}
+                  style={{ top: "73px" }}
                 >
                   <Filter className="h-4 w-4 mr-2" />
                   Filters
@@ -226,7 +220,7 @@ export function FiltersOverlay({
               className="fixed z-[60] h-12 w-12 rounded-full border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 p-0"
               style={{
                 left: `${position.x}px`,
-                top: `calc(var(--header-h) + ${position.y}px)`,
+                top: `${position.y}px`,
               }}
             >
               <Filter className="h-5 w-5" />
@@ -251,7 +245,7 @@ export function FiltersOverlay({
       )}
       style={{
         left: `${position.x}px`,
-        top: `calc(var(--header-h) + ${position.y}px)`,
+        top: `${position.y}px`,
         width: "min(320px, 90vw)",
         maxHeight: "75vh",
       }}
