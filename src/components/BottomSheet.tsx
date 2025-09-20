@@ -16,8 +16,9 @@ import {
   Shield,
   Users,
   DollarSign,
-  MousePointer,
+  Target,
   Car,
+  MapPin,
 } from "lucide-react";
 import {
   Tooltip,
@@ -26,6 +27,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ServiceTimeline } from "@/components/ServiceTimeline";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface ServiceEvent {
   date: Date;
@@ -46,39 +49,46 @@ interface BottomSheetProps {
 }
 
 // Service field metadata with icons and tooltips (matching filter pane)
-const SERVICE_METADATA = {
-  platform: {
-    label: "Booking Platform",
-    tooltip: "The app platform where riders can access the service",
-    icon: Smartphone,
-  },
-  supervision: {
-    label: "Supervision",
-    tooltip:
-      "Whether the vehicle has a safety driver, safety attendant, or operates fully autonomously",
-    icon: Shield,
-  },
-  access: {
-    label: "Service Availability",
-    tooltip: "Who can ride the service",
-    icon: Users,
-  },
-  fares: {
-    label: "Charges Fares?",
-    tooltip: "Whether the service charges fares",
-    icon: DollarSign,
-  },
-  directBooking: {
-    label: "Direct Booking?",
-    tooltip:
-      "Whether riders can request an AV directly or only receive one by chance through a larger fleet",
-    icon: MousePointer,
-  },
-  vehicleTypes: {
-    label: "Vehicles",
-    tooltip: "The types of vehicles used in this service",
-    icon: Car,
-  },
+const getServiceMetadata = (isMobile: boolean) => {
+  return {
+    platform: {
+      label: isMobile ? "Platform" : "Booking Platform",
+      tooltip: "The app platform where riders can access the service",
+      icon: Smartphone,
+    },
+    supervision: {
+      label: "Supervision",
+      tooltip:
+        "Whether the vehicle has a safety driver, safety attendant, or operates fully autonomously",
+      icon: Shield,
+    },
+    access: {
+      label: isMobile ? "Availability" : "Service Availability",
+      tooltip: "Who can ride the service",
+      icon: Users,
+    },
+    fares: {
+      label: isMobile ? "Fares" : "Charges Fares?",
+      tooltip: "Whether the service charges fares",
+      icon: DollarSign,
+    },
+    directBooking: {
+      label: "Direct Booking?",
+      tooltip:
+        "Whether riders can request an AV directly or only receive one by chance through a larger fleet",
+      icon: Target,
+    },
+    vehicleTypes: {
+      label: "Vehicles",
+      tooltip: "The types of vehicles used in this service",
+      icon: Car,
+    },
+    area: {
+      label: "Service Area",
+      tooltip: "The coverage area of this autonomous vehicle service",
+      icon: MapPin,
+    },
+  };
 };
 
 export function BottomSheet({
@@ -92,6 +102,7 @@ export function BottomSheet({
   serviceTimelineRange,
 }: BottomSheetProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   // Debug logging
   React.useEffect(() => {
@@ -189,7 +200,7 @@ export function BottomSheet({
 
   // Update historical data when timeline changes (with debouncing to prevent flickering)
   useEffect(() => {
-    if (!isTimelineMode || !timelineDate || !serviceArea) {
+    if (!timelineDate || !serviceArea) {
       setHistoricallyAccurateArea(serviceArea);
       setIsLoadingHistoricalData(false);
       return;
@@ -213,6 +224,7 @@ export function BottomSheet({
         console.log("Timeline date:", timelineDate);
         console.log("Service area:", serviceArea);
 
+
         // If no historical service exists at this date, set to null to show N/A
         setHistoricallyAccurateArea(historicalService || null);
       } catch (error) {
@@ -224,7 +236,7 @@ export function BottomSheet({
     };
 
     getHistoricalState();
-  }, [isTimelineMode, timelineDate, serviceArea]);
+  }, [timelineDate, serviceArea]);
 
   if (!isOpen || !serviceArea) return null;
 
@@ -241,6 +253,7 @@ export function BottomSheet({
   };
 
   const serviceLinks = getServiceLinks();
+  const serviceMetadata = getServiceMetadata(isMobile);
 
   // Get the service name (first line)
   const getServiceName = () => {
@@ -250,22 +263,18 @@ export function BottomSheet({
   // Get the date text (second line)
   const getDateText = () => {
     if (timelineDate) {
-      // Check if timeline date is today
-      const today = new Date();
-      const isToday = timelineDate.toDateString() === today.toDateString();
-
-      if (isToday) {
-        return "As of: Today";
-      } else {
-        return `As of: ${timelineDate.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })}`;
-      }
+      return `As of: ${timelineDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })}`;
     }
 
-    return "As of: Today";
+    return `As of: ${new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })}`;
   };
 
   // Convert access values for display
@@ -296,21 +305,47 @@ export function BottomSheet({
     return value || fallback;
   };
 
+  // Helper function to get area display value that updates with timeline
+  const getAreaDisplay = () => {
+    if (!historicallyAccurateArea) return "N/A";
+
+    // The area should be directly on the historical service area object
+    const areaValue = (historicallyAccurateArea as any).area_square_miles;
+
+    if (areaValue && typeof areaValue === 'number') {
+      return `~ ${Math.round(areaValue)} sq mi`;
+    }
+
+    return "Calculating...";
+  };
+
   return (
     <TooltipProvider>
       <div
         data-bottom-sheet
-        className="fixed bottom-0 right-0 z-50 mr-4 mb-4 w-full max-w-md md:w-[36rem]"
+        className={cn(
+          "fixed z-50",
+          isMobile
+            ? "bottom-0 left-0 right-0 w-full max-h-[40vh] flex flex-col"
+            : "bottom-0 right-0 mr-4 mb-4 w-full max-w-md md:w-[36rem]"
+        )}
       >
         <Card
           ref={cardRef}
-          className="shadow-xl border border-white/10 bg-black/50 text-white backdrop-blur-md"
+          className={cn(
+            "shadow-xl border border-white/10 bg-black/50 text-white backdrop-blur-md",
+            isMobile ? "flex flex-col h-full min-h-0" : ""
+          )}
           onClick={(e) => {
             console.log("Card clicked!", e.target);
             e.stopPropagation();
           }}
         >
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+          {/* Fixed Header on Mobile */}
+          <CardHeader className={cn(
+            "flex flex-row items-start justify-between space-y-0 pb-3",
+            isMobile ? "flex-shrink-0" : ""
+          )}>
             <div className="flex items-start gap-3 min-w-0 flex-1">
               <div
                 className="w-4 h-4 rounded-full flex-shrink-0 mt-1"
@@ -338,49 +373,109 @@ export function BottomSheet({
             </Button>
           </CardHeader>
 
-          <CardContent className="space-y-3">
-            {/* Platform */}
-            <ServiceField
-              metadata={SERVICE_METADATA.platform}
-              value={getFieldValue("platform", "Unknown")}
-            />
+          {/* Timeline Slider - Fixed on Mobile */}
+          {isMobile && serviceEvents.length > 0 && serviceTimelineRange && timelineDate && onTimelineeDateChange && (
+            <div className="flex-shrink-0 px-6 py-2 border-b border-white/10">
+              <ServiceTimeline
+                serviceId={serviceArea.id}
+                serviceName={serviceArea.name}
+                startDate={serviceTimelineRange.start}
+                endDate={serviceTimelineRange.end}
+                currentDate={timelineDate}
+                onDateChange={onTimelineeDateChange}
+                events={serviceEvents}
+              />
+            </div>
+          )}
 
-            {/* Supervision */}
-            <ServiceField
-              metadata={SERVICE_METADATA.supervision}
-              value={getFieldValue("supervision", "Autonomous")}
-            />
+          {/* Scrollable Content on Mobile, Normal Content on Desktop */}
+          <CardContent className={cn(
+            "space-y-3",
+            isMobile
+              ? "overflow-y-auto flex-1 p-4 relative min-h-0"
+              : ""
+          )}>
+            {/* Scroll Indicator for Mobile */}
+            {isMobile && (
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            )}
 
-            {/* Service Availability */}
-            <ServiceField
-              metadata={SERVICE_METADATA.access}
-              value={
-                historicallyAccurateArea
-                  ? getAccessDisplay(getFieldValue("access", "Public"))
-                  : "N/A"
-              }
-            />
+            {isMobile ? (
+              /* Mobile: Two column layout */
+              <div className="grid grid-cols-2 gap-4">
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.area}
+                  value={getAreaDisplay()}
+                />
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.platform}
+                  value={getFieldValue("platform", "Unknown")}
+                />
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.supervision}
+                  value={getFieldValue("supervision", "Autonomous")}
+                />
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.access}
+                  value={
+                    historicallyAccurateArea
+                      ? getAccessDisplay(getFieldValue("access", "Public"))
+                      : "N/A"
+                  }
+                />
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.fares}
+                  value={getFieldValue("fares", "Yes")}
+                />
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.directBooking}
+                  value={getFieldValue("directBooking", "Yes")}
+                />
+                <ServiceFieldMobile
+                  metadata={serviceMetadata.vehicleTypes}
+                  value={getFieldValue("vehicleTypes", "N/A")}
+                />
+              </div>
+            ) : (
+              /* Desktop: Original layout */
+              <>
+                <ServiceField
+                  metadata={serviceMetadata.area}
+                  value={getAreaDisplay()}
+                />
+                <ServiceField
+                  metadata={serviceMetadata.platform}
+                  value={getFieldValue("platform", "Unknown")}
+                />
+                <ServiceField
+                  metadata={serviceMetadata.supervision}
+                  value={getFieldValue("supervision", "Autonomous")}
+                />
+                <ServiceField
+                  metadata={serviceMetadata.access}
+                  value={
+                    historicallyAccurateArea
+                      ? getAccessDisplay(getFieldValue("access", "Public"))
+                      : "N/A"
+                  }
+                />
+                <ServiceField
+                  metadata={serviceMetadata.fares}
+                  value={getFieldValue("fares", "Yes")}
+                />
+                <ServiceField
+                  metadata={serviceMetadata.directBooking}
+                  value={getFieldValue("directBooking", "Yes")}
+                />
+                <ServiceField
+                  metadata={serviceMetadata.vehicleTypes}
+                  value={getFieldValue("vehicleTypes", "N/A")}
+                />
+              </>
+            )}
 
-            {/* Charges Fares */}
-            <ServiceField
-              metadata={SERVICE_METADATA.fares}
-              value={getFieldValue("fares", "Yes")}
-            />
-
-            {/* Direct Booking */}
-            <ServiceField
-              metadata={SERVICE_METADATA.directBooking}
-              value={getFieldValue("directBooking", "Yes")}
-            />
-
-            {/* Vehicle Types */}
-            <ServiceField
-              metadata={SERVICE_METADATA.vehicleTypes}
-              value={getFieldValue("vehicleTypes", "N/A")}
-            />
-
-            {/* Service Timeline */}
-            {serviceEvents.length > 0 && serviceTimelineRange && timelineDate && onTimelineeDateChange && (
+            {/* Service Timeline for Desktop */}
+            {!isMobile && serviceEvents.length > 0 && serviceTimelineRange && timelineDate && onTimelineeDateChange && (
               <div className="pt-4 mt-4 border-t border-white/10">
                 <ServiceTimeline
                   serviceId={serviceArea.id}
@@ -394,9 +489,12 @@ export function BottomSheet({
               </div>
             )}
 
-            {/* Service Links - Static, don't change with timeline */}
+            {/* Service Links - Part of scrollable content */}
             {serviceLinks.length > 0 && (
-              <div className="pt-4 mt-4 border-t border-white/10">
+              <div className={cn(
+                "pt-4 mt-4 border-t border-white/10",
+                isMobile ? "pb-4" : ""
+              )}>
                 <div className="flex flex-col gap-2">
                   {serviceLinks.map((link, index) => (
                       <Button
@@ -422,7 +520,21 @@ export function BottomSheet({
                 </div>
               </div>
             )}
+
+            {/* Bottom Scroll Indicator for Mobile */}
+            {isMobile && (
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            )}
           </CardContent>
+
+          {/* Visual Right-side Scroll Indicator for Mobile */}
+          {isMobile && (
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col gap-1 opacity-30">
+              <div className="w-1 h-2 bg-white/40 rounded-full"></div>
+              <div className="w-1 h-2 bg-white/20 rounded-full"></div>
+              <div className="w-1 h-2 bg-white/40 rounded-full"></div>
+            </div>
+          )}
         </Card>
       </div>
     </TooltipProvider>
@@ -464,6 +576,72 @@ function ServiceField({ metadata, value }: ServiceFieldProps) {
         </TooltipContent>
       </Tooltip>
       <div className="text-sm font-medium text-white text-right">
+        {values.map((val, index) => (
+          <div key={index}>{val}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Mobile version with stacked layout and touch-and-hold tooltips
+function ServiceFieldMobile({ metadata, value }: ServiceFieldProps) {
+  const IconComponent = metadata.icon;
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [touchTimer, setTouchTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Split comma-separated values and trim whitespace
+  const values = value
+    .split(",")
+    .map((v) => v.trim())
+    .filter((v) => v.length > 0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Don't prevent default to allow scrolling
+    const timer = setTimeout(() => {
+      setShowTooltip(true);
+      // Hide tooltip after 3 seconds
+      setTimeout(() => setShowTooltip(false), 3000);
+    }, 500); // Show tooltip after 500ms hold
+    setTouchTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+    }
+  };
+
+  const handleTouchCancel = () => {
+    if (touchTimer) {
+      clearTimeout(touchTimer);
+      setTouchTimer(null);
+    }
+  };
+
+  return (
+    <div className="flex flex-col space-y-1 relative">
+      <div
+        className="flex items-center gap-2 active:bg-white/10 rounded p-1 -m-1 transition-colors"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
+      >
+        <IconComponent className="h-3 w-3 text-white/60" />
+        <span className="text-xs text-white/70 uppercase tracking-wide">
+          {metadata.label}
+        </span>
+      </div>
+
+      {/* Touch-and-hold tooltip */}
+      {showTooltip && (
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 p-2 bg-black/90 text-white text-xs rounded border border-white/20 backdrop-blur-sm">
+          {metadata.tooltip}
+        </div>
+      )}
+
+      <div className="text-sm font-medium text-white">
         {values.map((val, index) => (
           <div key={index}>{val}</div>
         ))}

@@ -68,6 +68,8 @@ export function ServiceTimeline({
   const isMobile = useIsMobile();
   const [openTooltip, setOpenTooltip] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [touchStartTime, setTouchStartTime] = useState<number>(0);
+  const [touchStartPosition, setTouchStartPosition] = useState<{ x: number; y: number } | null>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   // Convert dates to slider values (0-100)
   const totalDuration = endDate.getTime() - startDate.getTime();
@@ -79,27 +81,48 @@ export function ServiceTimeline({
     onDateChange(new Date(newTimestamp));
   };
 
-  // Handle mouse events for dragging
-  const handleTimelineClick = (e: React.MouseEvent | MouseEvent) => {
+  // Handle mouse and touch events for dragging
+  const handleTimelineClick = (e: React.MouseEvent | MouseEvent | React.TouchEvent | TouchEvent) => {
     if (!timelineRef.current) return;
 
-    // Always get fresh rect for accurate positioning
+    // Cache the rect at the start of dragging for better performance
     const rect = timelineRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+
+    // Get X coordinate from either mouse or touch event
+    const clientX = 'touches' in e
+      ? e.touches[0]?.clientX || e.changedTouches?.[0]?.clientX
+      : e.clientX;
+
+    if (clientX === undefined) return;
+
+    // Calculate relative position within the timeline
+    const relativeX = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (relativeX / rect.width) * 100));
+
+    // Directly calculate new timestamp without intermediate date conversion
     const newTimestamp = startDate.getTime() + (percentage / 100) * totalDuration;
-    const newDate = new Date(newTimestamp);
 
-    // Clamp date to not exceed today
+    // Clamp to not exceed today
     const today = new Date();
-    const clampedDate = newDate > today ? today : newDate;
+    const maxTimestamp = today.getTime();
+    const clampedTimestamp = Math.min(newTimestamp, maxTimestamp);
 
-    onDateChange(clampedDate);
+    onDateChange(new Date(clampedTimestamp));
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
+    setOpenTooltip(null); // Close any open tooltips when dragging starts
     handleTimelineClick(e);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStartTime(Date.now());
+    setTouchStartPosition({ x: touch.clientX, y: touch.clientY });
+    setOpenTooltip(null); // Close any open tooltips initially
+
+    // Don't start dragging immediately - wait to see if it's a hold or drag
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -111,27 +134,75 @@ export function ServiceTimeline({
     setIsDragging(false);
   };
 
-  // Global mouse listeners for smooth timeline dragging
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPosition) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartPosition.x);
+    const deltaY = Math.abs(touch.clientY - touchStartPosition.y);
+    const totalDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // If they've moved more than 10px, it's a drag - start dragging mode
+    if (totalDistance > 10 && !isDragging) {
+      e.preventDefault(); // Prevent scrolling once we detect dragging
+      setIsDragging(true);
+      handleTimelineClick(e);
+    } else if (isDragging) {
+      e.preventDefault(); // Continue preventing scroll during drag
+      handleTimelineClick(e);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const touchDuration = Date.now() - touchStartTime;
+    const wasStationary = !isDragging;
+
+    if (wasStationary && touchDuration >= 500) {
+      // Long press (500ms+) without movement - this is for tooltips on event markers
+      // The tooltip logic will be handled by individual event markers
+    } else if (wasStationary && touchDuration < 500) {
+      // Quick tap - jump to position
+      handleTimelineClick(e);
+    }
+
+    // Reset states
+    setIsDragging(false);
+    setTouchStartTime(0);
+    setTouchStartPosition(null);
+  };
+
+  // Global mouse and touch listeners for smooth timeline dragging
   useEffect(() => {
     if (!isDragging) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      // Throttle mouse move events for better performance
-      requestAnimationFrame(() => {
-        handleTimelineClick(e);
-      });
+      // Direct call without throttling for immediate response
+      handleTimelineClick(e);
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      e.preventDefault(); // Prevent scrolling while dragging
+      handleTimelineClick(e);
     };
 
     const handleGlobalMouseUp = () => {
       setIsDragging(false);
     };
 
-    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    const handleGlobalTouchEnd = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
     document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    document.addEventListener('touchend', handleGlobalTouchEnd);
 
     return () => {
       document.removeEventListener('mousemove', handleGlobalMouseMove);
       document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('touchmove', handleGlobalTouchMove);
+      document.removeEventListener('touchend', handleGlobalTouchEnd);
     };
   }, [isDragging]);
 
@@ -220,6 +291,9 @@ export function ServiceTimeline({
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
               onClick={!isDragging ? handleTimelineClick : undefined}
             >
               {/* Track background */}
@@ -239,10 +313,15 @@ export function ServiceTimeline({
                   <TooltipProvider key={`provider-${group.dateKey}`} delayDuration={50} skipDelayDuration={0}>
                     <Tooltip
                       {...(isMobile && {
-                        open: openTooltip === group.dateKey,
+                        open: openTooltip === group.dateKey && !isDragging,
                         onOpenChange: (open) => {
-                          setOpenTooltip(open ? group.dateKey : null);
+                          if (!isDragging) {
+                            setOpenTooltip(open ? group.dateKey : null);
+                          }
                         }
+                      })}
+                      {...(!isMobile && {
+                        open: isDragging ? false : undefined
                       })}
                     >
                       <TooltipTrigger asChild>
@@ -257,6 +336,35 @@ export function ServiceTimeline({
                           onDateChange(new Date(newTimestamp));
                           if (isMobile) {
                             setOpenTooltip(openTooltip === group.dateKey ? null : group.dateKey);
+                          }
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
+                          if (isMobile) {
+                            // For mobile, use long press to show tooltips
+                            const longPressTimer = setTimeout(() => {
+                              setOpenTooltip(openTooltip === group.dateKey ? null : group.dateKey);
+                            }, 500);
+
+                            const handleTouchEnd = () => {
+                              clearTimeout(longPressTimer);
+                            };
+
+                            const handleTouchMove = () => {
+                              clearTimeout(longPressTimer);
+                            };
+
+                            document.addEventListener('touchend', handleTouchEnd, { once: true });
+                            document.addEventListener('touchmove', handleTouchMove, { once: true });
+                          }
+                        }}
+                        onTouchEnd={(e) => {
+                          e.stopPropagation();
+                          // Quick tap on marker - jump to that date
+                          if (isMobile && !isDragging) {
+                            const targetProgress = (group as any).originalProgress || group.progress;
+                            const newTimestamp = startDate.getTime() + (targetProgress / 100) * totalDuration;
+                            onDateChange(new Date(newTimestamp));
                           }
                         }}
                       >

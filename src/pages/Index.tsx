@@ -1,4 +1,10 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -30,12 +36,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { History } from "lucide-react";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [serviceAreas, setServiceAreas] = useState<ServiceArea[]>([]);
   // Initialize selected area from URL
-  const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
+  const [selectedArea, setSelectedArea] = useState<
+    ServiceArea | HistoricalServiceArea | null
+  >(null);
+
+  // Initialize timeline data state early
+  const [activeHistoricalAreas, setActiveHistoricalAreas] = useState<
+    HistoricalServiceArea[]
+  >([]);
 
   // Initialize selected area ID from URL parameter
   const selectedAreaIdFromUrl = searchParams.get("selected");
@@ -67,7 +80,12 @@ const Index = () => {
         const center = centerParam.split(",").map(Number) as [number, number];
         const zoom = parseFloat(zoomParam);
 
-        if (center.length === 2 && !isNaN(center[0]) && !isNaN(center[1]) && !isNaN(zoom)) {
+        if (
+          center.length === 2 &&
+          !isNaN(center[0]) &&
+          !isNaN(center[1]) &&
+          !isNaN(zoom)
+        ) {
           return { center, zoom };
         }
       } catch (error) {
@@ -78,22 +96,18 @@ const Index = () => {
   });
 
   // Stabilize initial viewport - only use mapViewport for the initial setup, not for continuous updates
-  const initialViewport = useMemo(() => mapViewport, []);  // Only use the initial value
+  const initialViewport = useMemo(() => mapViewport, []); // Only use the initial value
   const [taxonomy] = useState<Taxonomy>({
     companies: ["Waymo", "Tesla", "Zoox", "May Mobility"],
     platform: ["Waymo", "Uber", "Lyft", "Robotaxi", "Zoox"],
     supervision: ["Autonomous", "Safety Driver", "Safety Attendant"],
-    access: ["Yes", "No"],
+    access: ["Public", "Waitlist"],
     fares: ["Yes", "No"],
     directBooking: ["Yes", "No"],
   });
   const isMobile = useIsMobile();
 
-  // Memoize showHistoricalData to prevent unnecessary re-renders
-  const showHistoricalData = useMemo(() => {
-    const today = new Date();
-    return currentTimelineDate.toDateString() !== today.toDateString();
-  }, [currentTimelineDate]);
+  // Always use historical data - "today" is just the latest historical state
 
   // Initialize filters from URL params with all options checked by default
   const [filters, setFilters] = useState<FiltersState>(() => {
@@ -122,113 +136,103 @@ const Index = () => {
     };
   });
 
-  // Load current service areas from Supabase
-  useEffect(() => {
-    const loadCurrentServices = async () => {
-      try {
-        const services = await getCurrentServiceAreas();
-        // console.log(
-        //   "Loaded current services from Supabase:",
-        //   services.length,
-        //   services
-        // );
-        // console.log(
-        //   "Service areas with geojsonPath:",
-        //   services.filter((s) => s.geojsonPath).length
-        // );
-        // console.log(
-        //   "Service areas without geojsonPath:",
-        //   services
-        //     .filter((s) => !s.geojsonPath)
-        //     .map((s) => ({
-        //       id: s.id,
-        //       name: s.name,
-        //       geojsonPath: s.geojsonPath,
-        //     }))
-        // );
-        setServiceAreas(services);
-      } catch (error) {
-        console.error("Failed to load current service areas:", error);
-      }
-    };
-    loadCurrentServices();
-  }, []);
+  // No separate current service areas - historical data includes "today"
 
-  // Load ALL historical service states at initialization for instant timeline scrubbing
+  // Load historical service states - all or just selected based on focus mode
   useEffect(() => {
     const loadAllHistoricalStates = async () => {
       try {
-        // console.log("Loading all historical service states for preloading...");
         const allStates = await getAllHistoricalServiceStates();
-        // console.log(
-        //   "Loaded all historical states:",
-        //   allStates.length,
-        //   allStates
-        // );
-        // console.log(
-        //   "Historical areas with geojsonPath:",
-        //   allStates.filter((s) => s.geojsonPath).length
-        // );
-        // console.log(
-        //   "Historical areas without geojsonPath:",
-        //   allStates
-        //     .filter((s) => !s.geojsonPath)
-        //     .map((s) => ({
-        //       id: s.id,
-        //       name: s.name,
-        //       geojsonPath: s.geojsonPath,
-        //     }))
-        // );
-        setAllHistoricalAreas(allStates as HistoricalServiceArea[]);
+
+        // Focus mode: only load historical states for the selected service
+        if (selectedAreaIdFromUrl) {
+          const selectedStates = allStates.filter(
+            (s) => s.id === selectedAreaIdFromUrl
+          );
+          console.log(
+            "🎯 Focus mode: loading historical states for selected service only:",
+            selectedStates.length
+          );
+          setAllHistoricalAreas(selectedStates as HistoricalServiceArea[]);
+        } else {
+          // Normal mode: load all historical states
+          console.log("🌍 Normal mode: loading all historical states");
+          setAllHistoricalAreas(allStates as HistoricalServiceArea[]);
+        }
       } catch (error) {
         console.error("Failed to load all historical service states:", error);
       }
     };
     loadAllHistoricalStates();
-  }, []);
+  }, [selectedAreaIdFromUrl]);
 
   // Timeline date is initialized directly in useState above
 
-  // Load historical service areas for timeline date using event sourcing
+  // Load historical service areas for timeline date using event sourcing (debounced)
   useEffect(() => {
     if (!currentTimelineDate) return;
 
-    const loadHistoricalAreas = async () => {
+    // Debounce the loading to prevent flickering during timeline dragging
+    const timeoutId = setTimeout(async () => {
+      console.log(
+        "🔄 Loading historical areas for date:",
+        currentTimelineDate.toISOString()
+      );
+
       try {
+        // For any date (including today), get historical events up to that date
+        // This ensures we get the latest state available as of that date
         const services = await getAllServicesAtDate(currentTimelineDate);
 
-        // Debug logging for Phoenix issue
+        // Debug logging for Silicon Valley issue
         console.log("📅 Timeline date:", currentTimelineDate.toISOString());
         console.log("🔍 Total services loaded:", services.length);
 
-        const phoenixServices = services.filter(s =>
-          s.name?.toLowerCase().includes('phoenix') ||
-          s.city?.toLowerCase().includes('phoenix')
+        const siliconValleyServices = services.filter(
+          (s) =>
+            s.name?.toLowerCase().includes("silicon valley") ||
+            s.city?.toLowerCase().includes("silicon valley") ||
+            s.id?.toLowerCase().includes("silicon-valley")
         );
-        console.log("🏜️ Phoenix services found:", phoenixServices.length, phoenixServices);
+        console.log(
+          "🏔️ Silicon Valley historical services found:",
+          siliconValleyServices.length,
+          siliconValleyServices
+        );
 
-        // Debug Phoenix geometry data specifically
-        phoenixServices.forEach(service => {
-          console.log("🏜️ Phoenix service details:", {
-            id: service.id,
-            name: service.name,
-            geojsonPath: service.geojsonPath,
-            geometry_name: service.geometry_name,
-            effectiveDate: service.effectiveDate,
-            endDate: service.endDate,
-            isActive: service.isActive
-          });
-        });
-
-        setActiveHistoricalAreas(services as HistoricalServiceArea[]);
+        // Focus mode: only show the selected service's historical data
+        if (selectedAreaIdFromUrl) {
+          const selectedServices = services.filter(
+            (s) => s.id === selectedAreaIdFromUrl
+          );
+          console.log(
+            "🎯 Focus mode: filtering historical areas for selected service:",
+            selectedServices.length
+          );
+          setActiveHistoricalAreas(selectedServices as HistoricalServiceArea[]);
+          console.log(
+            "✅ Set activeHistoricalAreas to:",
+            selectedServices.length,
+            "services (focus mode)"
+          );
+        } else {
+          // Normal mode: show all services for this date
+          setActiveHistoricalAreas(services as HistoricalServiceArea[]);
+          console.log(
+            "✅ Set activeHistoricalAreas to:",
+            services.length,
+            "services (normal mode)"
+          );
+        }
       } catch (error) {
         console.error("Failed to load historical service areas:", error);
         setActiveHistoricalAreas([]);
       }
-    };
+    }, 15); // 15ms debounce delay
 
-    loadHistoricalAreas();
-  }, [currentTimelineDate]);
+    // Cleanup timeout on unmount or when dependencies change
+    return () => clearTimeout(timeoutId);
+  }, [currentTimelineDate, selectedAreaIdFromUrl]);
 
   // Load service timeline ticks when a service is selected
   useEffect(() => {
@@ -263,15 +267,21 @@ const Index = () => {
     loadServiceTicks();
   }, [selectedArea]);
 
-  // Load selected area from URL once service areas are available
+  // Load selected area from URL once historical areas are available
   useEffect(() => {
-    if (selectedAreaIdFromUrl && serviceAreas.length > 0 && !selectedArea) {
-      const areaFromUrl = serviceAreas.find(area => area.id === selectedAreaIdFromUrl);
+    if (
+      selectedAreaIdFromUrl &&
+      activeHistoricalAreas.length > 0 &&
+      !selectedArea
+    ) {
+      const areaFromUrl = activeHistoricalAreas.find(
+        (area) => area.id === selectedAreaIdFromUrl
+      );
       if (areaFromUrl) {
         setSelectedArea(areaFromUrl);
       }
     }
-  }, [selectedAreaIdFromUrl, serviceAreas, selectedArea]);
+  }, [selectedAreaIdFromUrl, activeHistoricalAreas, selectedArea]);
 
   // Track if this is the initial load to prevent immediate URL updates
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -321,9 +331,10 @@ const Index = () => {
 
       // Update date
       const today = new Date();
-      const isToday = currentTimelineDate.toDateString() === today.toDateString();
+      const isToday =
+        currentTimelineDate.toDateString() === today.toDateString();
       if (!isToday) {
-        newParams.set("date", currentTimelineDate.toISOString().split('T')[0]);
+        newParams.set("date", currentTimelineDate.toISOString().split("T")[0]);
       } else {
         newParams.delete("date");
       }
@@ -337,7 +348,10 @@ const Index = () => {
 
       // Update map viewport
       if (mapViewport) {
-        newParams.set("center", `${mapViewport.center[0]},${mapViewport.center[1]}`);
+        newParams.set(
+          "center",
+          `${mapViewport.center[0]},${mapViewport.center[1]}`
+        );
         newParams.set("zoom", mapViewport.zoom.toString());
       } else {
         newParams.delete("center");
@@ -353,18 +367,27 @@ const Index = () => {
     return () => clearTimeout(timeoutId);
   }, [filters, currentTimelineDate, selectedArea, mapViewport]);
 
-  const handleServiceAreaClick = useCallback((area: ServiceArea | null) => {
-    setSelectedArea(area);
-  }, []);
+  const handleServiceAreaClick = useCallback(
+    (area: ServiceArea | HistoricalServiceArea | null) => {
+      setSelectedArea(area);
+    },
+    []
+  );
 
   const handleCloseBottomSheet = () => {
-    console.log("Closing bottom sheet");
+    console.log("Closing bottom sheet - exiting focus mode");
     setSelectedArea(null);
 
     // Remove the selected parameter from URL to prevent reopening
     const newSearchParams = new URLSearchParams(searchParams.toString());
     newSearchParams.delete("selected");
     setSearchParams(newSearchParams, { replace: true });
+
+    // Zoom out to show all filtered areas after a brief delay to let visibility updates apply
+    setTimeout(() => {
+      // Trigger a map event to zoom to all visible areas
+      window.dispatchEvent(new CustomEvent("avmap:zoom-to-all-areas"));
+    }, 100);
   };
 
   const handleFiltersChange = (newFilters: FiltersState) => {
@@ -380,10 +403,7 @@ const Index = () => {
     []
   );
 
-  // Calculate active service areas for the current timeline date using event sourcing
-  const [activeHistoricalAreas, setActiveHistoricalAreas] = useState<
-    HistoricalServiceArea[]
-  >([]);
+  // Active service areas state already declared above
 
   // Store ALL historical service states for preloading
   const [allHistoricalAreas, setAllHistoricalAreas] = useState<
@@ -391,12 +411,14 @@ const Index = () => {
   >([]);
 
   // Service-specific timeline ticks
-  const [serviceTicks, setServiceTicks] = useState<{
-    date: Date;
-    type: string;
-    description: string;
-    details?: string;
-  }[]>([]);
+  const [serviceTicks, setServiceTicks] = useState<
+    {
+      date: Date;
+      type: string;
+      description: string;
+      details?: string;
+    }[]
+  >([]);
   const [serviceTimelineRange, setServiceTimelineRange] = useState<{
     start: Date;
     end: Date;
@@ -440,9 +462,12 @@ const Index = () => {
     // console.log("Timeline date changed to:", date);
   };
 
-  const handleMapViewportChange = useCallback((center: [number, number], zoom: number) => {
-    setMapViewport({ center, zoom });
-  }, []);
+  const handleMapViewportChange = useCallback(
+    (center: [number, number], zoom: number) => {
+      setMapViewport({ center, zoom });
+    },
+    []
+  );
 
   // PART 1: AUDIT - Log layout measurements
   useLayoutEffect(() => {
@@ -495,13 +520,11 @@ const Index = () => {
         {/* Full-width map */}
         <div id="map-container" className="w-full h-full overflow-hidden">
           <Map
-            serviceAreas={serviceAreas}
             historicalServiceAreas={activeHistoricalAreas}
             allHistoricalServiceAreas={allHistoricalAreas}
             deploymentTransitions={deploymentTransitions}
             filters={filters}
             isTimelineMode={isTimelineMode}
-            showHistoricalData={showHistoricalData}
             selectedArea={selectedArea}
             onServiceAreaClick={handleServiceAreaClick}
             initialViewport={initialViewport}
@@ -519,8 +542,8 @@ const Index = () => {
         onChange={handleFiltersChange}
       />
 
-      {/* Time Slider - only render when timeline mode is active */}
-      {isTimelineMode && (
+      {/* Time Slider - only render when timeline mode is active and not mobile with bottom sheet open */}
+      {isTimelineMode && !(isMobile && selectedArea) && (
         <TimeSlider
           startDate={dateRange.start}
           endDate={dateRange.end}
@@ -536,17 +559,11 @@ const Index = () => {
         // Only show when timeline UI is closed
         if (isTimelineMode) return null;
 
-        const today = new Date();
-        const isToday =
-          currentTimelineDate.toDateString() === today.toDateString();
-
-        const dateText = isToday
-          ? "Today"
-          : currentTimelineDate.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            });
+        const dateText = currentTimelineDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
 
         const handleTimelineOpen = () => {
           setIsTimelineMode(true);
@@ -559,10 +576,11 @@ const Index = () => {
                 <button
                   onClick={handleTimelineOpen}
                   data-timeline-container
-                  className="fixed z-50 px-4 py-2 rounded-full text-sm font-medium shadow-lg backdrop-blur-md border border-white/10 bg-black/50 text-white/90 hover:bg-black/60 hover:text-white transition-all cursor-pointer"
+                  className="fixed z-50 flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-black/50 text-white backdrop-blur-md shadow-lg hover:bg-black/60 transition-all cursor-pointer"
                   style={{ left: "16px", bottom: "73px" }}
                 >
-                  {dateText}
+                  <History className="h-4 w-4" />
+                  <span className="text-sm font-medium">{dateText}</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right">
@@ -585,10 +603,12 @@ const Index = () => {
         serviceTimelineRange={serviceTimelineRange}
       />
 
-      {/* Footer positioned at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-10">
-        <SiteFooter />
-      </div>
+      {/* Footer positioned at bottom - hidden on mobile */}
+      {!isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 z-10">
+          <SiteFooter />
+        </div>
+      )}
     </div>
   );
 };

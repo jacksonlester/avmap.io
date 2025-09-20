@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -41,10 +41,14 @@ export function TimeSlider({
   const [position, setPosition] = useState({ x: 16, y: 73 });
   const [isPanelDragging, setIsPanelDragging] = useState(false);
   const [isTimelineDragging, setIsTimelineDragging] = useState(false);
+  const [isMobileTouchDragging, setIsMobileTouchDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+  const mobileTimelineRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const lastUpdateRef = useRef<number>(0);
+  const animationFrameRef = useRef<number>();
 
   // Sync internal minimized state with external timeline mode
   useEffect(() => {
@@ -79,6 +83,30 @@ export function TimeSlider({
     onDateChange(clampedDate);
   };
 
+  // Optimized mobile touch handler
+  const handleMobileTimelineUpdate = useCallback((clientX: number) => {
+    if (!mobileTimelineRef.current) return;
+
+    const rect = mobileTimelineRef.current.getBoundingClientRect();
+    const clickX = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+    const newTimestamp = startDate.getTime() + (percentage / 100) * totalDuration;
+    const newDate = new Date(newTimestamp);
+
+    // Clamp date to not exceed today
+    const today = new Date();
+    const clampedDate = newDate > today ? today : newDate;
+
+    // Throttle updates using requestAnimationFrame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(() => {
+      onDateChange(clampedDate);
+    });
+  }, [startDate, totalDuration, onDateChange]);
+
   const handleTimelineMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent panel dragging
     setIsTimelineDragging(true);
@@ -99,17 +127,15 @@ export function TimeSlider({
     if (!isTimelineDragging) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      // Throttle mouse move events for better performance
-      requestAnimationFrame(() => {
-        handleTimelineClick(e);
-      });
+      // Direct call without throttling for immediate response
+      handleTimelineClick(e);
     };
 
     const handleGlobalMouseUp = () => {
       setIsTimelineDragging(false);
     };
 
-    document.addEventListener('mousemove', handleGlobalMouseMove, { passive: true });
+    document.addEventListener('mousemove', handleGlobalMouseMove);
     document.addEventListener('mouseup', handleGlobalMouseUp);
 
     return () => {
@@ -134,7 +160,7 @@ export function TimeSlider({
     setIsPanelDragging(true);
     setDragOffset({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      y: window.innerHeight - e.clientY - position.y,
     });
   };
 
@@ -150,7 +176,7 @@ export function TimeSlider({
         73, // Keep 73px from bottom
         Math.min(
           window.innerHeight - 150, // Leave space at top
-          window.innerHeight - (e.clientY - dragOffset.y)
+          window.innerHeight - e.clientY - dragOffset.y
         )
       );
 
@@ -174,41 +200,57 @@ export function TimeSlider({
   if (isMobile) {
     return (
       <Sheet
-        open={isTimelineMode}
-        onOpenChange={(open) => {
-          if (onTimelineModeChange) {
-            onTimelineModeChange(open);
-          }
+        open={true}
+        onOpenChange={() => {
+          // Always keep open on mobile
         }}
+        modal={false}
       >
-        <SheetContent side="bottom" className="h-40 p-0">
-          <div className="p-4 space-y-3">
-            {/* Top row: Timeline title */}
+        <SheetContent side="bottom" className="h-20 p-0 [&>button]:hidden">
+          <div className="p-2 space-y-1">
+            {/* Top row: Current date title */}
             <div className="text-center">
-              <span className="text-sm font-medium">Timeline</span>
+              <span className="text-sm font-medium">
+                {currentDate.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </span>
             </div>
 
-            {/* Middle row: Current date display */}
-            <div className="text-center">
-              <div className="inline-block text-xs bg-muted px-2 py-1 rounded whitespace-nowrap shadow border">
-                {(() => {
-                  const today = new Date();
-                  const isToday = currentDate.toDateString() === today.toDateString();
-                  return isToday ? "today" : currentDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                })()}
-              </div>
-            </div>
 
             {/* YouTube-style timeline slider for mobile */}
-            <div className="relative">
+            <div className="relative px-3">
               <div className="relative group/timeline">
                 <div
+                  ref={mobileTimelineRef}
                   className="relative h-6 flex items-center cursor-pointer"
-                  onClick={handleTimelineClick}
+                  onClick={(e) => {
+                    if (!mobileTimelineRef.current) return;
+                    const rect = mobileTimelineRef.current.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const percentage = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+                    const newTimestamp = startDate.getTime() + (percentage / 100) * totalDuration;
+                    const newDate = new Date(newTimestamp);
+                    const today = new Date();
+                    const clampedDate = newDate > today ? today : newDate;
+                    onDateChange(clampedDate);
+                  }}
+                  onTouchStart={(e) => {
+                    setIsMobileTouchDragging(true);
+                    const touch = e.touches[0];
+                    handleMobileTimelineUpdate(touch.clientX);
+                  }}
+                  onTouchMove={(e) => {
+                    if (isMobileTouchDragging) {
+                      const touch = e.touches[0];
+                      handleMobileTimelineUpdate(touch.clientX);
+                    }
+                  }}
+                  onTouchEnd={() => {
+                    setIsMobileTouchDragging(false);
+                  }}
                 >
                   {/* Track background */}
                   <div className="w-full h-1 bg-muted rounded-full group-hover/timeline:h-1.5 transition-all">
@@ -230,25 +272,6 @@ export function TimeSlider({
               </div>
             </div>
 
-            {/* Bottom row: Start date and Today button */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="whitespace-nowrap">
-                {startDate.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                })}
-              </span>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onDateChange(endDate)}
-                className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 h-auto"
-              >
-                Today
-              </Button>
-            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -286,7 +309,13 @@ export function TimeSlider({
               className="h-4 w-4 text-white/50 hover:text-white cursor-grab active:cursor-grabbing"
               onMouseDown={handleCardMouseDown}
             />
-            <span className="text-sm font-medium text-white">Timeline</span>
+            <span className="text-sm font-medium text-white">
+              {currentDate.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </span>
           </div>
           <Button
             variant="ghost"
@@ -303,22 +332,6 @@ export function TimeSlider({
           </Button>
         </div>
 
-        {/* Middle row: Current date display */}
-        <div className="text-center">
-          <div
-            className="inline-block text-xs text-white bg-black/90 px-2 py-1 rounded whitespace-nowrap shadow-lg"
-          >
-            {(() => {
-              const today = new Date();
-              const isToday = currentDate.toDateString() === today.toDateString();
-              return isToday ? "today" : currentDate.toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              });
-            })()}
-          </div>
-        </div>
 
         {/* YouTube-style timeline slider */}
         <div className="relative">
@@ -367,7 +380,7 @@ export function TimeSlider({
             variant="ghost"
             size="sm"
             onClick={() => onDateChange(endDate)}
-            className="text-xs text-white/70 hover:text-white hover:bg-white/10 px-2 py-1 h-auto"
+            className="text-xs text-white/70 hover:text-white hover:bg-white/10 px-0 py-1 h-auto"
           >
             Today
           </Button>

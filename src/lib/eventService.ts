@@ -39,13 +39,14 @@ export async function getAllServicesAtDate(date: Date) {
     date.toISOString()
   );
 
-  // Debug Phoenix events specifically
-  const phoenixEvents = events?.filter(e =>
-    e.aggregate_id?.toLowerCase().includes('phoenix') ||
-    e.event_data?.city?.toLowerCase().includes('phoenix') ||
-    e.event_data?.name?.toLowerCase().includes('phoenix')
+  // Debug Silicon Valley events specifically for current issue
+  const siliconValleyEvents = events?.filter(e =>
+    e.aggregate_id?.toLowerCase().includes('silicon-valley') ||
+    e.aggregate_id?.toLowerCase().includes('silicon_valley') ||
+    e.event_data?.city?.toLowerCase().includes('silicon valley') ||
+    e.event_data?.name?.toLowerCase().includes('silicon valley')
   ) || [];
-  console.log("🏜️ Phoenix events found:", phoenixEvents.length, phoenixEvents);
+  console.log("🏔️ Silicon Valley events found:", siliconValleyEvents.length, siliconValleyEvents);
 
   // Group by service and rebuild each state
   const serviceStates = new Map();
@@ -67,6 +68,11 @@ export async function getAllServicesAtDate(date: Date) {
       // Ensure vehicleTypes is properly mapped from vehicle_types
       if (event.event_data.vehicle_types && !serviceData.vehicleTypes) {
         serviceData.vehicleTypes = event.event_data.vehicle_types;
+      }
+
+      // Ensure area is included
+      if (event.event_data.area_square_miles) {
+        serviceData.area_square_miles = event.event_data.area_square_miles;
       }
 
       serviceStates.set(serviceId, serviceData);
@@ -106,7 +112,8 @@ export async function getAllServicesAtDate(date: Date) {
       if (currentState.isActive) {
         serviceStates.set(serviceId, {
           ...currentState,
-          geometry_name: event.event_data.new_geometry_name,
+          geometry_name: event.event_data.new_geometry_name || event.event_data.geometry_name,
+          area_square_miles: event.event_data.area_square_miles,
           lastUpdated: event.event_date,
         });
       }
@@ -182,6 +189,9 @@ export async function getAllServicesAtDate(date: Date) {
     }
   }
 
+  // Debug service states before filtering
+  console.log("🔍 All service states before filtering:", Array.from(serviceStates.entries()));
+
   // Filter out inactive services and remove the isActive flag
   const activeServices = Array.from(serviceStates.values())
     .filter((service) => service.isActive)
@@ -194,6 +204,8 @@ export async function getAllServicesAtDate(date: Date) {
         vehicleTypes: serviceData.vehicleTypes || vehicle_types, // Prioritize updated vehicleTypes over original vehicle_types
       };
     });
+
+  console.log("✅ Active services after filtering:", activeServices.length, activeServices.map(s => s.id));
 
   console.log(
     "🔍 Returning",
@@ -264,9 +276,9 @@ export async function getServiceTimelineTicks(serviceId: string) {
     switch (event.event_type) {
       case "service_created":
         description = "Service Launched";
-        details = `Started operating in ${
-          event.event_data.city || "unknown city"
-        }`;
+        details = event.event_data.name || event.event_data.city
+          ? `Started operating in ${event.event_data.name || event.event_data.city}`
+          : "Service started operating";
         break;
       case "service_updated":
         description = "Service Updated";

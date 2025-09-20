@@ -11,6 +11,7 @@ export interface ServiceArea {
   geojsonPath: string;
   lastUpdated: string;
   vehicleTypes?: string;
+  area_square_miles?: number;
 }
 
 export interface HistoricalServiceArea {
@@ -30,6 +31,7 @@ export interface HistoricalServiceArea {
   geojsonPath: string;
   lastUpdated?: string;
   vehicleTypes?: string;
+  area_square_miles?: number;
   geojson?: {
     type: 'FeatureCollection';
     features: Array<{
